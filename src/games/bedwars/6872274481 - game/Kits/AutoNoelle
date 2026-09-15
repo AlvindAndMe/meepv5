@@ -1,0 +1,56 @@
+	local AutoNoelle
+	local Notify
+	local FrostySlime
+	local HealSlime
+	local StickySlime
+	local VoidSlime
+	local Limit
+	
+	local function getSlimes()
+		local slimes = {}
+		local folder = workspace:FindFirstChild('SlimeModelFolder')
+		for _, v in folder and folder:GetChildren() or {} do
+			local data = v:FindFirstChild('SlimeData')
+			data = data and data.Value
+	
+			if data and data.Tamer.Value == lplr.UserId then
+				table.insert(slimes, {
+					Data = data,
+					RootPart = v,
+					Name = v.Name:gsub(`_{lplr.Name}`, ''):gsub('Slime', ' Slime')
+				})
+			end
+		end
+		return slimes
+	end
+	
+	local function getPlayer(name)
+		for _, v in playersService:GetPlayers() do
+			if `{v.DisplayName} ({v.Name})` == name then
+				return v
+			end
+		end
+		return
+	end
+	
+	AutoNoelle = vape.Categories.Kits:CreateModule({
+		Name = 'AutoNoelle',
+		Function = function(call)
+			if call then
+				repeat
+					if entitylib.isAlive and (not Limit.Enabled or store.hand.tool and store.hand.tool.Name == 'slime_tamer_flute') then
+						for _, v in getSlimes() do
+							local dropdown = AutoNoelle.Options[`{v.Name} Target`]
+							local player = dropdown and getPlayer(dropdown.Value)
+							if player and v.Data.Following.Value ~= player.UserId then
+								bedwars.Handler:Get('RequestMoveSlime'):Fire('CallServerAsync', {
+									slimeId = v.Data:GetAttribute('Id'),
+									targetPlayerUserId = player.UserId
+								}):andThen(function(suc)
+									if suc then
+										v.Data.Following.Value = player.UserId
+	
+										if Notify.Enabled then
+											notif('AutoNoelle', `Directed {v.Name} to {player.DisplayName} ({player.Name})`, 5, 'info')
+										end
+									end

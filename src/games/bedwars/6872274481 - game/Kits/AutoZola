@@ -1,0 +1,38 @@
+	local AutoZola
+	local Mode
+	local Range
+	local links = {}
+	local nextLink = 0
+	
+	local function isLinked(char)
+		local expiry = links[char]
+		if expiry and expiry > tick() then
+			return true
+		end
+		links[char] = nil
+		return false
+	end
+	
+	local function attemptLink(char)
+		if not char or tick() < nextLink or isLinked(char) then return end
+		local count = 0
+		for i in links do
+			if isLinked(i) then
+				count += 1
+			end
+		end
+		if count >= bedwars.SoulBrokerConstants.MAX_SOUL_LINKS then return end
+	
+		links[char] = tick() + 1
+		nextLink = tick() + 1
+		bedwars.Handler:Get('AttemptSoulLink'):Fire('CallServerAsync', char)
+	end
+	
+	AutoZola = vape.Categories.Kits:CreateModule({
+		Name = 'AutoZola',
+		Function = function(callback)
+			if callback then
+				AutoZola:Clean(bedwars.Handler:Get('SoulLinkFormed').Remote:Connect(function(linkTable)
+					if linkTable.broker == lplr and not linkTable.guard then
+						links[linkTable.target] = tick() + bedwars.SoulBrokerConstants.SOUL_LINK_DURATION
+					end

@@ -1,0 +1,19 @@
+	local BedProtector
+	local PlaceRange
+	local Blacklist
+	local Wool
+	local Mode
+	local Smart
+	local Switch
+	
+	local function getBlocks()
+		local blocks = {}
+		for _, v in store.inventory.inventory.items do
+			local block = bedwars.ItemMeta[v.itemType].block
+			if block and (Wool.Enabled and v.itemType:find('wool') or not Wool.Enabled and not table.find(Blacklist.ListEnabled, v.itemType:find('wool') and 'wool' or v.itemType)) then
+				table.insert(blocks, {v.itemType, block.health, v.tool})
+			end
+		end
+		if #blocks > 1 then
+			table.sort(blocks, function(a, b)
+				return a[2] > b[2]

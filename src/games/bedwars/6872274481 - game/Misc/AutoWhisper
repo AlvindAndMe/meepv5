@@ -1,0 +1,23 @@
+	local AutoWhisper
+	local Heal
+	local Threshold
+	local Fly
+	local Owl
+	local Target
+	
+	local teammates = {'None'}
+	local old
+	
+	local function getOwl()
+		for _, v in collectionService:GetTagged('Owl') do
+			if v:GetAttribute('Owner') == lplr.UserId then
+				return v
+			end
+		end
+		return nil
+	end
+	
+	local function addConnection(plr, connected)
+		if not connected then
+			vape:Clean(plr:GetAttributeChangedSignal('Team'):Connect(function()
+				addConnection(plr, true)

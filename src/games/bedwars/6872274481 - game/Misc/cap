@@ -1,0 +1,15 @@
+	local cap = getfpscap and getfpscap() or nil
+	
+	vape.Legit:CreateModule({
+		Name = 'FPSUnlocker',
+		Category = 'Game',
+		Icon = getvapeasset('catsix/assets/new/legit_fpsunlocker.png'),
+		Function = function(callback)
+			if cap then
+				setfpscap(callback and 9999 or cap)
+			elseif callback then
+				setfpscap(9999)
+				notif('FPSUnlocker', 'You have to restart ur game inorder to disable this.', 8, 'info')
+			end
+		end
+	})

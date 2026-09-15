@@ -1,0 +1,60 @@
+	local BedAssist
+	local AimMode
+	local Speed
+	local Range
+	local Shake
+	local Mode
+	local Limit
+	
+	local started = 0
+	local aimfuncs = {
+		Simple = function(localcframe, pos, fps)
+			local rng = Random.new()
+			return localcframe:Lerp(CFrame.lookAt(localcframe.p, pos + Vector3.new((rng:NextNumber() - 0.5) * Shake.Value * fps, (rng:NextNumber() - 0.5) * Shake.Value * fps, (rng:NextNumber() - 0.5) * Shake.Value * fps)), Speed.Value * fps), Speed.Value
+		end,
+		Adaptive = function(localcframe, pos, fps)
+			local prog, rng = (math.min((tick() - started) / (1 / (Speed.Value * 0.5)), 1) < 0.5 and 4 * math.min((tick() - started) / (1 / (Speed.Value * 0.5)), 1) * math.min((tick() - started) / (1 / (Speed.Value * 0.5)), 1) * math.min((tick() - started) / (1 / (Speed.Value * 0.5)), 1) or 1 - math.pow(-2 * math.min((tick() - started) / (1 / (Speed.Value * 0.5)), 1) + 2, 3) / 2), Random.new()
+			local speed = Speed.Value * prog
+			return localcframe:Lerp(CFrame.lookAt(localcframe.p, pos + Vector3.new((rng:NextNumber() - 0.5) * Shake.Value * fps, (rng:NextNumber() - 0.5) * Shake.Value * fps, (rng:NextNumber() - 0.5) * Shake.Value * fps)), speed * fps), speed
+		end
+	}
+	
+	local function getBestPosition(block)
+		local handler = bedwars.BlockController:getHandlerRegistry():getHandler(block.Name)
+		local cost, pos = math.huge, nil
+		local mag = 9e9
+	
+		local positions = (handler and handler:getContainedPositions(block) or {block.Position / 3})
+		for _, v in positions do
+			local dpos, dcost = calculatePath(block, v * 3)
+			local dmag = dpos and (entitylib.character.RootPart.Position - dpos).Magnitude
+	
+			if dpos then
+				if dcost < cost or (dcost == cost and dmag < mag) then
+					cost, pos, mag = dcost, dpos, dmag
+				end
+			end
+		end
+	
+		if pos and (entitylib.character.RootPart.Position - pos).Magnitude <= Range.Value then
+			return pos
+		end
+		return nil
+	end
+	
+	BedAssist = vape.Categories.World:CreateModule({
+		Name = 'BedAssist',
+		Function = function(call)
+			if call then
+				repeat
+					task.wait()
+				until store.matchState ~= 0 or not BedAssist.Enabled
+				if not BedAssist.Enabled then
+					return
+				end
+	
+				local beds = collection('bed', BedAssist, function(tab, obj)
+					task.delay(0, function()
+						if not obj:GetAttribute('Team' .. (lplr:GetAttribute('Team') or -1) .. 'NoBreak') then
+							table.insert(tab, obj)
+						end

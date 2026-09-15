@@ -1,0 +1,98 @@
+	local BedPatcher
+	local Mode
+	local Whitelist
+	local PlaceRange
+	local Radius
+	local Wool
+	local Switch
+	local NoAnimation
+	local Limit
+	local layout, adjacent = {}, {}
+	local placeanimation = bedwars.BlockController:getAnimationController():getAssetId(0)
+	local placing, old = false
+	
+	for _, v in Enum.NormalId:GetEnumItems() do
+		table.insert(adjacent, Vector3.FromNormalId(v) * 3)
+	end
+	
+	local function getBedNear()
+		local localPosition = entitylib.isAlive and entitylib.character.RootPart.Position or Vector3.zero
+		for _, v in collectionService:GetTagged('bed') do
+			if (localPosition - v.Position).Magnitude < (PlaceRange.Value + Radius.Value) and v:GetAttribute('Team'..(lplr:GetAttribute('Team') or -1)..'NoBreak') then
+				return v
+			end
+		end
+		return nil
+	end
+	
+	local function getBlock(itemType)
+		if Limit.Enabled then
+			local hand = store.hand.toolType == 'block' and store.hand.tool
+			if hand and (not Wool.Enabled or hand.Name:find('wool')) and table.find(Whitelist.ListEnabled, hand.Name:find('wool') and 'wool' or hand.Name) then
+				return hand.Name, hand
+			end
+			return nil
+		end
+	
+		local best, health
+		for _, v in store.inventory.inventory.items do
+			local block = bedwars.ItemMeta[v.itemType].block
+			if not block or (Wool.Enabled and not v.itemType:find('wool')) then continue end
+			if not table.find(Whitelist.ListEnabled, v.itemType:find('wool') and 'wool' or v.itemType) then continue end
+			if v.itemType == itemType then
+				return v.itemType, v.tool
+			end
+			if not health or (block.health or 0) > health then
+				best, health = v, block.health or 0
+			end
+		end
+		return best and best.itemType or nil, best and best.tool or nil
+	end
+	
+	local function scanBed(bed)
+		table.clear(layout)
+		for _, v in store.blocks do
+			if not v:HasTag('bed') and (v.Position - bed.Position).Magnitude <= Radius.Value then
+				layout[v.Position] = v.Name
+			end
+		end
+	
+		local holes = {}
+		for i, v in layout do
+			for _, v2 in adjacent do
+				local cell = i + v2
+				if layout[cell] or holes[cell] or getPlacedBlock(cell) then continue end
+	
+				local walls = 0
+				for _, v in adjacent do
+					if layout[cell + v] then
+						walls += 1
+					end
+				end
+	
+				if walls >= 4 then
+					holes[cell] = v
+				end
+			end
+		end
+	
+		for i, v in holes do
+			layout[i] = v
+		end
+	end
+	
+	BedPatcher = vape.Categories.World:CreateModule({
+		Name = 'BedPatcher',
+		Function = function(callback)
+			if callback then
+				local bed
+				old = bedwars.AnimationUtil.playAnimation
+				bedwars.AnimationUtil.playAnimation = function(self, plr, assetId, config)
+					if placing and NoAnimation.Enabled and assetId == placeanimation then return end
+					return old(self, plr, assetId, config)
+				end
+	
+				BedPatcher:Clean(collectionService:GetInstanceAddedSignal('block'):Connect(function(v)
+					if bed and not v:HasTag('bed') and (v.Position - bed.Position).Magnitude <= Radius.Value then
+						layout[v.Position] = v.Name
+					end

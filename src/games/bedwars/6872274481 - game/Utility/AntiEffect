@@ -1,0 +1,34 @@
+	local AntiEffect
+	local Dizzy
+	local Fear
+	local Vignettes
+	local oldvignettes
+	
+	AntiEffect = vape.Categories.Utility:CreateModule({
+		Name = 'AntiEffect',
+		Function = function(callback)
+			if callback then
+				if Dizzy.Enabled then
+					runService:UnbindFromRenderStep('dizzy-status')
+				end
+	
+				if Fear.Enabled then
+					runService:UnbindFromRenderStep('werewolf-fear-status')
+				end
+	
+				if Vignettes.Enabled then
+					oldvignettes = bedwars.VignetteController.enableOnScreenEffects
+					bedwars.VignetteController.enableOnScreenEffects = false
+					bedwars.VignetteController:destroyAllVignettes()
+				end
+	
+				local added = bedwars.SyncEvents.StatusEffectAdded:setPriority(1000):connect(function(event)
+					if event.entityInstance ~= lplr.Character then return end
+	
+					if Dizzy.Enabled and event.statusEffect == bedwars.StatusEffectMeta.DIZZY then
+						runService:UnbindFromRenderStep('dizzy-status')
+					end
+	
+					if Fear.Enabled and event.statusEffect == bedwars.StatusEffectMeta.WEREWOLF_FEAR then
+						runService:UnbindFromRenderStep('werewolf-fear-status')
+					end

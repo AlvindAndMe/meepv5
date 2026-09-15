@@ -1,0 +1,18 @@
+	local UICleanup
+	local OpenInv
+	local KillFeed
+	local OldTabList
+	local HotbarApp = getRoactRender(require(lplr.PlayerScripts.TS.controllers.global.hotbar.ui['hotbar-app']).HotbarApp.render)
+	local HotbarOpenInventory = require(lplr.PlayerScripts.TS.controllers.global.hotbar.ui['hotbar-open-inventory']).HotbarOpenInventory
+	local old, new = {}, {}
+	local oldkillfeed
+	
+	vape:Clean(function()
+		for _, v in new do
+			table.clear(v)
+		end
+		for _, v in old do
+			table.clear(v)
+		end
+		table.clear(new)
+		table.clear(old)

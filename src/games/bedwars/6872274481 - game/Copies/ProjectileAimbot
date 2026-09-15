@@ -1,0 +1,178 @@
+	local ProjectileAimbot
+	local TargetPart
+	local Targets
+	local Sort
+	local FOV
+	local Horizontal
+	local Vertical
+	local AutoCharge
+	local Aim = {}
+	local OtherProjectiles
+	local Blacklist
+	local old, hook
+	local arcCheck = RaycastParams.new()
+	arcCheck.FilterType = Enum.RaycastFilterType.Exclude
+	
+						end
+	
+						if plr.Player and plr.Player:GetAttribute('IsOwlTarget') then
+							for _, v in collectionService:GetTagged('Owl') do
+								if v:GetAttribute('Target') == plr.Player.UserId and v:GetAttribute('Status') == 2 then
+									playerGravity = 0
+								end
+							end
+						end
+	
+						local aimpart = getTargetPart(plr, part)
+						local velocity = projmeta.projectile == 'telepearl' and Vector3.zero or aimpart.AssemblyLinearVelocity
+						local airborne = plr.Humanoid.FloorMaterial == Enum.Material.Air or math.abs(plr.RootPart.AssemblyLinearVelocity.Y) > 0.01
+						local newlook = CFrame.new(offsetpos, aimpart.Position) * CFrame.new(projmeta.projectile == 'owl_projectile' and Vector3.zero or Vector3.new(bedwars.BowConstantsTable.RelX, bedwars.BowConstantsTable.RelY, bedwars.BowConstantsTable.RelZ))
+						local calc, _, travelTime = prediction.SolveTrajectory(newlook.p, projSpeed, gravity, aimpart.Position, velocity, playerGravity, plr.HipHeight, plr.Jumping and 42.6 or nil, store.airRay, airborne, plr.RootPart.Position, plr.RootPart, nil, true)
+						if calc and travelTime and (Horizontal.Value ~= 1 or Vertical.Value ~= 1) then
+							local rise = (velocity.Y * travelTime) - (playerGravity * travelTime * travelTime * 0.5)
+							local lead = Vector3.new(velocity.X * travelTime * (Horizontal.Value - 1), rise * (Vertical.Value - 1), velocity.Z * travelTime * (Horizontal.Value - 1))
+							local adjusted, _, adjustedTime = prediction.SolveTrajectory(newlook.p, projSpeed, gravity, aimpart.Position + lead, velocity, playerGravity, plr.HipHeight, plr.Jumping and 42.6 or nil, store.airRay, airborne, plr.RootPart.Position, plr.RootPart, nil, true)
+							if adjusted then
+								calc, travelTime = adjusted, adjustedTime or travelTime
+							end
+						end
+	
+						if not calc then
+							return nil
+						end
+	
+						store.hitchance.ProjectileAimbot = {Value = getHitChance(plr, travelTime), Clock = tick()}
+						local launch = CFrame.new(newlook.Position, calc).LookVector * projSpeed
+						if Targets.Walls.Enabled and travelTime then
+							local ignorelist = {gameCamera, lplr.Character}
+							for _, v in entitylib.List do
+								if v.Character then
+									table.insert(ignorelist, v.Character)
+								end
+							end
+							arcCheck.FilterDescendantsInstances = ignorelist
+							if not prediction.IsTrajectoryClear(offsetpos, launch, gravity, travelTime, arcCheck) then
+								return nil
+							end
+						end
+	
+						return {
+							initialVelocity = launch * ((AutoCharge.Enabled or not Aim.Enabled) and 1 or projmeta.velocityMultiplier),
+							positionFrom = offsetpos,
+							deltaT = lifetime,
+							gravitationalAcceleration = gravity,
+							drawDurationSeconds = AutoCharge.Enabled and 5 or projmeta.drawDurationSeconds
+						}
+					end
+	
+					local values, attempts, started = nil, 0, os.clock()
+					local plr = entitylib.EntityMouse({
+						Part = 'RootPart',
+						Range = FOV.Value,
+						Players = Targets.Players.Enabled,
+						NPCs = Targets.NPCs.Enabled,
+						Priority = Targets.Priority.Value,
+						Origin = entitylib.isAlive and (shootpos or entitylib.character.RootPart.Position) or Vector3.zero,
+						MouseOrigin = gameCamera.ViewportSize / 2,
+						Sort = sortmethods[Sort.Value],
+						Check = function(entity)
+							if attempts >= 10 or (attempts > 0 and (os.clock() - started) > 0.0015) then
+								return false
+							end
+							attempts += 1
+							values = getLaunchValues(entity)
+							return values ~= nil
+						end
+					})
+	
+					if plr and values then
+						targetinfo.Targets[plr] = tick() + 1
+						return values
+					end
+				end
+	
+				hook = function(self, projmeta, worldmeta, origin, shootpos, ...)
+					if ProjectileAimbot.Enabled then
+						local success, values = pcall(aimLaunchValues, self, projmeta, worldmeta, origin, shootpos)
+						if success and values then
+							return values
+						end
+					end
+	
+					return old(self, projmeta, worldmeta, origin, shootpos, ...)
+				end
+				bedwars.ProjectileController.calculateImportantLaunchValues = hook
+			elseif hook and bedwars.ProjectileController.calculateImportantLaunchValues == hook then
+				bedwars.ProjectileController.calculateImportantLaunchValues = old
+				old, hook = nil, nil
+			end
+		end,
+		Tooltip = 'Silently adjusts your aim towards the enemy'
+	})
+	
+	Targets = ProjectileAimbot:CreateTargets({
+		Players = true,
+		Walls = true
+	})
+	local methods = {'Distance', 'Damage'}
+	for _, v in sortlist do
+		if not table.find(methods, v) then
+			table.insert(methods, v)
+		end
+	end
+	Sort = ProjectileAimbot:CreateDropdown({
+		Name = 'Target mode',
+		List = methods,
+		Default = 'Distance'
+	})
+	TargetPart = ProjectileAimbot:CreateDropdown({
+		Name = 'Part',
+		List = {'RootPart', 'Head', 'Torso', 'Left arm', 'Right arm', 'Left leg', 'Right leg', 'Random', 'Dynamic'},
+		Tooltip = 'Dynamic aims at the head with a headhunter, since that is the only bow that pays extra for one, and at the body with everything else'
+	})
+	FOV = ProjectileAimbot:CreateSlider({
+		Name = 'FOV',
+		Min = 1,
+		Max = 1000,
+		Default = 1000
+	})
+	Horizontal = ProjectileAimbot:CreateSlider({
+		Name = 'Horizontal prediction',
+		Min = 0,
+		Max = 2,
+		Default = 1,
+		Decimal = 100,
+		Tooltip = 'Scales how far ahead of the target you aim sideways'
+	})
+	Vertical = ProjectileAimbot:CreateSlider({
+		Name = 'Vertical prediction',
+		Min = 0,
+		Max = 2,
+		Default = 1,
+		Decimal = 100,
+		Tooltip = 'Scales how far ahead of the target you aim while it rises or falls'
+	})
+	AutoCharge = ProjectileAimbot:CreateToggle({
+		Name = 'Auto Charge',
+		Function = function(callback)
+			if Aim.Object then
+				Aim.Object.Visible = callback
+			end
+		end,
+		Default = true,
+		Tooltip = 'Fully charges your bow, Allowing your projectile to deal more damage'
+	})
+	Aim = ProjectileAimbot:CreateToggle({
+		Name = 'Aim change',
+		Default = true,
+		Darker = true,
+		Tooltip = 'Changes your trajectory to match charge percentage.'
+	})
+	OtherProjectiles = ProjectileAimbot:CreateToggle({
+		Name = 'Other Projectiles',
+		Default = true
+	})
+	Blacklist = ProjectileAimbot:CreateTextList({
+		Name = 'Blacklist',
+		Default = {'telepearl'}
+	})

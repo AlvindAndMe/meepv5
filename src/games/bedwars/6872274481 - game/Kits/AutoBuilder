@@ -1,0 +1,33 @@
+	local AutoBuilder
+	local Animation
+	local Blacklist
+	local BedCheck
+	local Limit
+	
+	local function getBed(pos)
+		local bed, lastmag = nil, math.huge
+		for _, v in collectionService:GetTagged('bed') do
+			local mag = (pos - v.Position).Magnitude
+			if mag < lastmag and v:GetAttribute(`Team{lplr:GetAttribute('Team') or -1}NoBreak`) then
+				bed, lastmag = v, mag
+			end
+		end
+		return bed
+	end
+	
+	AutoBuilder = vape.Categories.Kits:CreateModule({
+		Name = 'AutoBuilder',
+		Function = function(callback)
+			if callback then
+				repeat
+					task.wait()
+				until store.matchState ~= 0 and store.equippedKit == 'builder' or not AutoBuilder.Enabled
+				if not AutoBuilder.Enabled then
+					return
+				end
+	
+				local blocks = collection('block', AutoBuilder, function(tab, obj)
+					task.delay(0, function()
+						if not obj:GetAttribute('NoBreak') and obj:GetAttribute('PlacedByUserId') then
+							table.insert(tab, obj)
+						end

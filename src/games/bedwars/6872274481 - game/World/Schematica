@@ -1,3 +1,4 @@
+run(function()
 local Schematica
 local File
 local Mode
@@ -221,3 +222,4 @@ Transparency = Schematica:CreateSlider({
 		end
 	end
 })
+end)

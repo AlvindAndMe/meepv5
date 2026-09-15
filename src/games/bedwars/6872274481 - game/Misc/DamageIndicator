@@ -1,0 +1,8 @@
+	local DamageIndicator
+	local FontOption
+	local Color
+	local Size
+	local Anchor
+	local Stroke
+	local suc, tab = pcall(function()
+		return debug.getupvalue(bedwars.DamageIndicator, 2)

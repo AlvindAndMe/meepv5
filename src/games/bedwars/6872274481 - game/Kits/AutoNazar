@@ -1,0 +1,15 @@
+	local AutoNazar
+	local Consume
+	local Health
+	local Force
+	local Empower
+	local Range
+	local empowered = false
+	
+	AutoNazar = vape.Categories.Kits:CreateModule({
+		Name = 'AutoNazar',
+		Function = function(callback)
+			if callback then
+				empowered = false
+				AutoNazar:Clean(lplr.CharacterAdded:Connect(function()
+					empowered = false

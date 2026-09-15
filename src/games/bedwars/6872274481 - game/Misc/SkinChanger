@@ -1,0 +1,20 @@
+	local SkinChanger
+	local Options = {}
+	local skins, families, groups, order = {}, {}, {}, {}
+	local names, extras = {}, {}
+	local sounds = {}
+	local added = setmetatable({}, {__mode = 'k'})
+	local watching, lasthand, queued
+	local tiers = {leather = true, chainmail = true, wood = true, stone = true, gold = true, iron = true, diamond = true, emerald = true}
+	
+	for _, v in bedwars.ItemSkinType do
+		local meta = bedwars.getItemSkinMeta(v)
+		local item = meta and meta.itemType and bedwars.ItemMeta[meta.itemType]
+		if item and not item.block then
+			local label = `_{v}_`
+			for i in meta.itemType:gmatch('[^_]+') do
+				label = label:gsub(`_{i}_`, '_')
+			end
+			label = label:gsub('^_+', ''):gsub('_+$', '')
+			label = (tostring(label ~= '' and label or v):gsub('_', ' '):gsub('%a+', function(word)
+				return `{word:sub(1, 1):upper()}{word:sub(2)}`

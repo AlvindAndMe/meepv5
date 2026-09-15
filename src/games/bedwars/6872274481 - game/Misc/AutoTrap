@@ -1,0 +1,54 @@
+	local AutoTrap
+	local Traps
+	local Target
+	local Radius
+	local Range
+	local Amount
+	local Delay
+	local Switch
+	local Notify
+	
+	local placed = {}
+	local previous
+	
+	local function getBed(localPosition)
+		local own = `Team{lplr:GetAttribute('Team') or -1}NoBreak`
+		local closest, mag = nil, Range.Value
+	
+		for _, v in collectionService:GetTagged('bed') do
+			local mine = v:GetAttribute(own) and true or false
+			if mine ~= (Target.Value == 'Your bed') then continue end
+	
+			local distance = (localPosition - v.Position).Magnitude
+			if distance < mag then
+				closest, mag = v, distance
+			end
+		end
+		return closest
+	end
+	
+	local function getTrap()
+		for _, name in Traps.ListEnabled do
+			if getItem(name) then
+				return name
+			end
+		end
+	end
+	
+	local function getRing(bed)
+		local spots = {}
+		local step = Radius.Value * 3
+	
+		for x = -step, step, 3 do
+			for z = -step, step, 3 do
+				if math.abs(x) ~= step and math.abs(z) ~= step then continue end
+	
+				local pos = bed.Position + Vector3.new(x, 0, z)
+				if not getPlacedBlock(pos) and getPlacedBlock(pos - Vector3.new(0, 3, 0)) then
+					table.insert(spots, pos)
+				end
+			end
+		end
+	
+		table.sort(spots, function(a, b)
+			return (bed.Position - a).Magnitude < (bed.Position - b).Magnitude

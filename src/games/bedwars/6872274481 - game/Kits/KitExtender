@@ -1,0 +1,134 @@
+	local KitExtender
+	local Kaida
+	local KaidaRange
+	local olds = {}
+	local summonrange
+	
+	local boosts = {
+		{
+			Name = 'Jade Hammer',
+			Kit = 'jade',
+			Controller = 'JadeHammerController',
+			Method = 'useJadeHammer',
+			Tooltip = 'Extends how far the Jade Hammer jump launches you',
+			Hook = function(entry, old)
+				return function(self)
+					local jumped = bedwars.AbilityController:canUseAbility('jade_hammer_jump', {disableBlockedAbilityAlert = true})
+					local call = old(self)
+	
+					if entry.Toggle.Enabled and jumped and store.equippedKit == 'jade' and entitylib.isAlive then
+						local root = entitylib.character.RootPart
+						root:ApplyImpulse(Vector3.new(0, root.AssemblyMass * (entry.Multiplier.Value - 1) * 20.5, 0))
+					end
+					return call
+				end
+			end
+		},
+		{
+			Name = 'Void Regent Dash',
+			Kit = 'regent',
+			Controller = 'VoidAxeController',
+			Method = 'useVoidAxe',
+			Tooltip = 'Extends how far the Void Regent axe dash launches you',
+			Hook = function(entry, old)
+				return function(self)
+					local dashed = bedwars.AbilityController:canUseAbility('void_axe_jump', {disableBlockedAbilityAlert = true})
+					local call = old(self)
+	
+					if entry.Toggle.Enabled and dashed and store.equippedKit == 'regent' and entitylib.isAlive then
+						local root = entitylib.character.RootPart
+						root:ApplyImpulse(root.CFrame.LookVector * Vector3.new(1, 0, 1) * root.AssemblyMass * (entry.Multiplier.Value - 1) * 70)
+					end
+					return call
+				end
+			end
+		},
+		{
+			Name = 'Yamini Pounce',
+			Kit = 'cat',
+			Controller = 'CatController',
+			Method = 'leap',
+			Tooltip = 'Extends how far the Yamini pounce launches you',
+			Hook = function(entry, old)
+				return function(self, character, direction)
+					local call = old(self, character, direction)
+					local horizontal = direction and direction * Vector3.new(1, 0, 1) or Vector3.zero
+					local root = character and character:FindFirstChild('HumanoidRootPart')
+					if entry.Toggle.Enabled and store.equippedKit == 'cat' and root and horizontal.Magnitude > 0 then
+						root:ApplyImpulse(horizontal.Unit * root.AssemblyMass * (entry.Multiplier.Value - 1) * 70)
+					end
+					return call
+				end
+			end
+		},
+		{
+			Name = 'Yamini Wall Kick',
+			Kit = 'cat',
+			Controller = 'CatController',
+			Method = 'dismountWall',
+			Tooltip = 'Extends how high dropping off a climbed wall throws you',
+			Hook = function(entry, old)
+				return function(self, ...)
+					local call = old(self, ...)
+	
+					if entry.Toggle.Enabled and store.equippedKit == 'cat' and entitylib.isAlive then
+						local root = entitylib.character.RootPart
+						root:ApplyImpulse(Vector3.new(0, root.AssemblyMass * (entry.Multiplier.Value - 1) * 25, 0))
+					end
+					return call
+				end
+			end
+		},
+		{
+			Name = 'Yuzi Dash',
+			Kit = 'dasher',
+			Controller = 'DaoController',
+			Method = 'dashForward',
+			Tooltip = 'Extends how far the yuzi dash launches you',
+			Hook = function(entry, old)
+				return function(self, direction)
+					local call = old(self, direction)
+					local horizontal = direction and direction * Vector3.new(1, 0, 1) or Vector3.zero
+					if entry.Toggle.Enabled and store.equippedKit == 'dasher' and entitylib.isAlive and horizontal.Magnitude > 0 then
+						local root = entitylib.character.RootPart
+						root:ApplyImpulse(horizontal.Unit * root.AssemblyMass * (entry.Multiplier.Value - 1) * 70)
+					end
+					return call
+				end
+			end
+		},
+		{
+			Name = 'Xurot Wing Flap',
+			Kit = 'void_dragon',
+			Controller = 'VoidDragonController',
+			Method = 'flapWings',
+			Tooltip = 'Extends how high each wing flap throws you',
+			Hook = function(entry, old)
+				return function(self, ...)
+					local call = old(self, ...)
+	
+					if entry.Toggle.Enabled and store.equippedKit == 'void_dragon' and entitylib.isAlive then
+						local root = entitylib.character.RootPart
+						root:ApplyImpulse(Vector3.new(0, root.AssemblyMass * (entry.Multiplier.Value - 1) * 40, 0))
+					end
+					return call
+				end
+			end
+		}
+	}
+	
+	KitExtender = vape.Categories.Kits:CreateModule({
+		Name = 'KitExtender',
+		Function = function(callback)
+			if callback then
+				for i, v in boosts do
+					local controller = bedwars[v.Controller]
+					if controller and controller[v.Method] then
+						olds[i] = controller[v.Method]
+						controller[v.Method] = v.Hook(v, olds[i])
+					end
+				end
+	
+				if Kaida.Enabled then
+					local suc, balance = pcall(function()
+						return require(replicatedStorage.TS.games.bedwars.kit.kits.summoner['summoner-kit-balance']).SummonerKitBalance

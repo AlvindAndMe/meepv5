@@ -1,0 +1,17 @@
+	local AutoNyx
+	local Targets
+	
+	AutoNyx = vape.Categories.Kits:CreateModule({
+		Name = 'AutoNyx',
+		Function = function(call)
+			if call then
+				AutoNyx:Clean(vapeEvents.EntityDamageEvent.Event:Connect(function(damageTable)
+					if damageTable.damageType == 0 and damageTable.fromEntity and damageTable.fromEntity.Name == lplr.Name and entitylib.EntityPosition({
+						Range = 14.4,
+						Part = 'RootPart',
+						Players = Targets.Players.Enabled,
+						NPCs = Targets.NPCs.Enabled,
+						Priority = Targets.Priority.Value
+					}) and bedwars.AbilityController:canUseAbility('midnight', {disableBlockedAbilityAlert = true}) then
+						bedwars.AbilityController:useAbility('midnight')
+					end

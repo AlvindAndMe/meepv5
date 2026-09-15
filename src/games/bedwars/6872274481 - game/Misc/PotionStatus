@@ -1,0 +1,248 @@
+	local PotionStatus
+	local ShowPositive
+	local ShowNegative
+	local Background
+	local BackgroundColor
+	local effects = {}
+	local seen = {}
+	local replacements = {
+		speed = 'rbxassetid://71873445837330'
+	}
+	local negative = {
+		bleed = true,
+		burn = true,
+		cold = true,
+		curse_of_the_altar = true,
+		decay = true,
+		dizzy = true,
+		feeble = true,
+		frost_bite = true,
+		frosted = true,
+		frozen = true,
+		grave_trap = true,
+		greased = true,
+		grounded = true,
+		grounded_enchant = true,
+		hungry = true,
+		infected_poison = true,
+		isabel_shield_broken = true,
+		lunar_venom = true,
+		mage_burn = true,
+		oil_spilled = true,
+		oiled = true,
+		on_ice = true,
+		owl_target = true,
+		poison = true,
+		powdered = true,
+		shield_down = true,
+		shrink = true,
+		silas_halloween_hex = true,
+		silence = true,
+		skeleton_poison = true,
+		snae_poison_arrow = true,
+		snake_poison_sword = true,
+		soaked = true,
+		SPIDER_WEB_SLOW = true,
+		stacking_decay = true,
+		Vengeful_venom = true,
+		void_hunter_marked = true,
+		weak_armor = true,
+		werewolf_fear = true,
+		zapped_1 = true,
+		zapped_2 = true,
+		zapped_3 = true
+	}
+	local accentcolor = Color3.fromRGB(5, 134, 105)
+	local warncolor = Color3.fromRGB(236, 129, 44)
+	local dangercolor = Color3.fromRGB(250, 50, 56)
+	local halfcut = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0),
+		NumberSequenceKeypoint.new(0.5, 0),
+		NumberSequenceKeypoint.new(0.501, 1),
+		NumberSequenceKeypoint.new(1, 1)
+	})
+	local background
+	
+	local function Added(active)
+		if vape.ThreadFix then
+			setthreadidentity(8)
+		end
+	
+		effects[active.statusEffect] = active.expireTime
+		local max = active.expireTime - workspace:GetServerTimeNow()
+		if max <= 0 then
+			effects[active.statusEffect] = nil
+			return
+		end
+	
+		local meta = bedwars.ItemMeta[active.statusEffect] or bedwars.ItemMeta[active.statusEffect..'_potion']
+		local effect = Instance.new('Frame')
+		effect.BackgroundTransparency = 1
+		effect.Parent = background
+		local ring = Instance.new('Frame')
+		ring.BackgroundTransparency = 1
+		ring.Position = UDim2.fromOffset(0, 4)
+		ring.Size = UDim2.fromOffset(50, 50)
+		ring.Parent = effect
+		local backing = Instance.new('Frame')
+		backing.BackgroundTransparency = 1
+		backing.Position = UDim2.fromOffset(4.5, 4.5)
+		backing.Size = UDim2.fromOffset(41, 41)
+		backing.Parent = ring
+		local backingcorner = Instance.new('UICorner')
+		backingcorner.CornerRadius = UDim.new(1, 0)
+		backingcorner.Parent = backing
+		local backingstroke = Instance.new('UIStroke')
+		backingstroke.Color = Color3.new()
+		backingstroke.Thickness = 3.6
+		backingstroke.Transparency = 0.216
+		backingstroke.Parent = backing
+		local gradients, strokes = {}, {}
+	
+		for _, v in {'Left', 'Right'} do
+			local clip = Instance.new('Frame')
+			clip.BackgroundTransparency = 1
+			clip.ClipsDescendants = true
+			clip.Position = UDim2.fromOffset(v == 'Right' and 25 or 0, 0)
+			clip.Size = UDim2.fromOffset(25, 50)
+			clip.Parent = ring
+			local arc = Instance.new('Frame')
+			arc.BackgroundTransparency = 1
+			arc.Position = UDim2.fromOffset(v == 'Right' and -21 or 4, 4)
+			arc.Size = UDim2.fromOffset(42, 42)
+			arc.Parent = clip
+			local arccorner = Instance.new('UICorner')
+			arccorner.CornerRadius = UDim.new(1, 0)
+			arccorner.Parent = arc
+			local arcstroke = Instance.new('UIStroke')
+			arcstroke.Color = accentcolor
+			arcstroke.Thickness = 4
+			arcstroke.Parent = arc
+			local arcgradient = Instance.new('UIGradient')
+			arcgradient.Transparency = halfcut
+			arcgradient.Parent = arcstroke
+			gradients[v] = arcgradient
+			strokes[v] = arcstroke
+		end
+	
+		local sidebar = Instance.new('Frame')
+		sidebar.AnchorPoint = Vector2.new(0, 0.5)
+		sidebar.BackgroundColor3 = Color3.fromRGB(170, 170, 170)
+		sidebar.BackgroundTransparency = 0.5
+		sidebar.BorderSizePixel = 0
+		sidebar.Position = UDim2.new(0, 53, 0.5, 1)
+		sidebar.Size = UDim2.fromOffset(2, 27)
+		sidebar.Parent = effect
+		local effectimage = Instance.new('ImageLabel')
+		effectimage.AnchorPoint = Vector2.new(0, 0.5)
+		effectimage.BackgroundTransparency = 1
+		effectimage.Image = replacements[active.statusEffect] or (meta and meta.image) or bedwars.ImageList.POTION_ART
+		effectimage.Position = UDim2.new(0, 10, 0.5, 0)
+		effectimage.Size = UDim2.fromOffset(30, 30)
+		effectimage.Parent = effect
+		local effectname = Instance.new('TextLabel')
+		effectname.BackgroundTransparency = 1
+		effectname.FontFace = uipallet.FontBold
+		effectname.Position = UDim2.fromOffset(67, 10)
+		effectname.Size = UDim2.fromOffset(108, 20)
+		effectname.Text = (active.statusEffect:sub(0, 1):upper()..active.statusEffect:sub(2, #active.statusEffect)):gsub('_', ' ')
+		effectname.TextColor3 = Color3.new(1, 1, 1)
+		effectname.TextSize = 15
+		effectname.TextXAlignment = Enum.TextXAlignment.Left
+		effectname.Parent = effect
+		local nameshadow = effectname:Clone()
+		nameshadow.Position += UDim2.fromOffset(1, 1)
+		nameshadow.TextColor3 = Color3.new()
+		nameshadow.TextTransparency = 0.5
+		nameshadow.ZIndex = 0
+		nameshadow.Parent = effect
+		effect.Size = UDim2.fromOffset(getfontbounds(effectname.Text, 15, uipallet.FontBold).X + 80, 57)
+		local effectduration = effectname:Clone()
+		effectduration.Position = UDim2.fromOffset(67, 29)
+		effectduration.Text = '00:00'
+		effectduration.TextSize = 14
+		effectduration.Parent = effect
+		local durationshadow = effectduration:Clone()
+		durationshadow.Position += UDim2.fromOffset(1, 1)
+		durationshadow.TextColor3 = Color3.new()
+		durationshadow.TextTransparency = 0.5
+		durationshadow.ZIndex = 0
+		durationshadow.Parent = effect
+		local secs = 0
+	
+		repeat
+			local remaining = math.max(active.expireTime - workspace:GetServerTimeNow(), 0)
+			local percent = remaining / max
+			local ringcolor = percent > 0.5 and accentcolor or (percent > 0.25 and warncolor or dangercolor)
+			local theta = math.min(percent, 1) * 360
+			secs = math.floor(remaining)
+			gradients.Left.Rotation = math.clamp(theta, 180, 360)
+			gradients.Right.Rotation = math.clamp(theta, 0, 180)
+			strokes.Left.Color = ringcolor
+			strokes.Right.Color = ringcolor
+			effectduration.Text = ('%02d:%02d'):format(secs // 60, secs % 60)
+			effectduration.TextColor3 = ringcolor
+			durationshadow.Text = effectduration.Text
+			task.wait()
+		until secs <= 0 or effects[active.statusEffect] ~= active.expireTime
+	
+		effect:Destroy()
+	
+		if effects[active.statusEffect] == active.expireTime then
+			effects[active.statusEffect] = nil
+		end
+	end
+	
+	PotionStatus = vape.Legit:CreateModule({
+		Name = 'Potion Status',
+		Category = 'HUD',
+		Icon = getvapeasset('catsix/assets/new/legit_potionstatus.png'),
+		Function = function(callback)
+			if callback then
+				repeat
+					table.clear(seen)
+	
+					if entitylib.isAlive then
+						for _, v in bedwars.StatusEffectUtil:getAllActive(lplr.Character) do
+							if (v.expireTime or 0) - workspace:GetServerTimeNow() > 0 and (negative[v.statusEffect] and ShowNegative.Enabled or not negative[v.statusEffect] and ShowPositive.Enabled) then
+								seen[v.statusEffect] = true
+	
+								if effects[v.statusEffect] ~= v.expireTime then
+									task.spawn(Added, v)
+								end
+							end
+						end
+					end
+	
+					for i in effects do
+						if not seen[i] then
+							effects[i] = nil
+						end
+					end
+	
+					task.wait(0.1)
+				until not PotionStatus.Enabled
+	
+				table.clear(effects)
+			end
+		end,
+		Size = UDim2.fromOffset(240, 64),
+		Tooltip = 'Shows your currently active effects'
+	})
+	
+	background = PotionStatus.Children
+	background.BackgroundColor3 = Color3.new()
+	background.BackgroundTransparency = 0.5
+	local backgroundcorner = Instance.new('UICorner')
+	backgroundcorner.CornerRadius = UDim.new(0, 4)
+	backgroundcorner.Parent = background
+	local layout = Instance.new('UIListLayout')
+	layout.HorizontalAlignment = Enum.HorizontalAlignment.Left
+	layout.SortOrder = Enum.SortOrder.LayoutOrder
+	layout.Parent = background
+	vape:Clean(layout:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(function()
+		if vape.ThreadFix then
+			setthreadidentity(8)
+		end
+	
+		background.Size = UDim2.fromOffset(layout.AbsoluteContentSize.X, layout.AbsoluteContentSize.Y)

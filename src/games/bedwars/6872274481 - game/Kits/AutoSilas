@@ -1,0 +1,24 @@
+	local AutoSilas
+	local SwapAura
+	local PressAttack
+	local Range
+	local aura = ''
+	
+	local function getHurtAlly(origin)
+		for _, v in entitylib.List do
+			if v.Player and v.Player:GetAttribute('Team') == lplr:GetAttribute('Team') and v.Health < v.MaxHealth and (v.RootPart.Position - origin).Magnitude <= Range.Value then
+				return v
+			end
+		end
+		return nil
+	end
+	
+	AutoSilas = vape.Categories.Kits:CreateModule({
+		Name = 'AutoSilas',
+		Function = function(callback)
+			if callback then
+				aura = ''
+				AutoSilas:Clean(bedwars.Handler:Get('UpdateRebellionAura').Remote:Connect(function(data)
+					if data.player == lplr then
+						aura = data.newAura
+					end

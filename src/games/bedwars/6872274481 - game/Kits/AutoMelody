@@ -1,0 +1,89 @@
+	local AutoMelody
+	local Range
+	local SelfHeal
+	local TeammateHeal
+	local UseHotbar
+	local SwitchBack
+	local nextHeal = 0
+	
+	AutoMelody = vape.Categories.Kits:CreateModule({
+	
+						if SelfHeal.Enabled and entitylib.character.Health < entitylib.character.MaxHealth then
+							hp, target = entitylib.character.Health, entitylib.character
+						end
+	
+						if TeammateHeal.Enabled then
+							for _, v in entitylib.List do
+								if v.Player and v.Player:GetAttribute('Team') == lplr:GetAttribute('Team') and v.Health > 0 and v.Health < v.MaxHealth and v.Health < hp and (localPosition - v.RootPart.Position).Magnitude <= Range.Value then
+									hp, target = v.Health, v
+								end
+							end
+						end
+					end
+	
+					local guitar = target and getItem('guitar')
+					if guitar then
+						local previousSlot, previousTool = store.inventory.hotbarSlot, store.hand.tool
+	
+						if UseHotbar.Enabled then
+							local slot = getHotbar(guitar.tool)
+							if slot then
+								hotbarSwitch(slot)
+							end
+						end
+	
+						nextHeal = tick() + bedwars.MelodyKitBalance.HEAL_COOLDOWN
+						bedwars.Handler:Get('PlayGuitar'):Fire('SendToServer', {
+							healTarget = target.Character
+						})
+	
+						if UseHotbar.Enabled and SwitchBack.Enabled then
+							if previousSlot and previousSlot ~= store.inventory.hotbarSlot then
+								hotbarSwitch(previousSlot)
+							elseif previousTool then
+								switchItem(previousTool)
+							end
+						end
+					end
+					task.wait(0.1)
+				until not AutoMelody.Enabled
+				bedwars.Handler:Get('StopPlayingGuitar'):Fire('SendToServer')
+			end
+		end,
+		Tooltip = 'Automatically uses the guitar to heal ur teammates/urself'
+	})
+	
+	SelfHeal = AutoMelody:CreateToggle({
+		Name = 'Self Heal',
+		Default = true
+	})
+	TeammateHeal = AutoMelody:CreateToggle({
+		Name = 'Teammate Heal',
+		Default = true
+	})
+	Range = AutoMelody:CreateSlider({
+		Name = 'Range',
+		Min = 1,
+		Max = 51,
+		Default = 51,
+		Suffix = function(val)
+			return val <= 1 and 'stud' or 'studs'
+		end,
+		Tooltip = 'The guitar reaches 51 studs, which is what this defaults to'
+	})
+	UseHotbar = AutoMelody:CreateToggle({
+		Name = 'Use hotbar',
+		Function = function(callback)
+			if SwitchBack then
+				SwitchBack.Object.Visible = callback
+			end
+		end,
+		Tooltip = 'Visibly swaps onto the guitar slot before healing instead of playing it silently'
+	})
+	SwitchBack = AutoMelody:CreateToggle({
+		Name = 'Switch back',
+		Default = true,
+		Darker = true,
+		Visible = false,
+		Tooltip = 'Returns to whatever you were holding after the heal'
+	})

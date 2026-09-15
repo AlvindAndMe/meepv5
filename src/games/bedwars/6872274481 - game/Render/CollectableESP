@@ -1,0 +1,49 @@
+	local CollectableESP
+	local Collectables
+	local Distance
+	local Transparency
+	local Scale
+	local Color = {}
+	local Reference = {}
+	local Folder = Instance.new('Folder')
+	Folder.Parent = vape.gui
+	
+	local tags = {
+		['alchemist_ingedients'] = 'Ingredient',
+		['alchemy_crystal'] = 'Crystal',
+		['crystalheart_seed'] = 'Crystalheart',
+		['forest_environment_plant'] = 'Plant',
+		['ghost'] = 'Ghost',
+		['hidden-metal'] = 'Metal',
+		['jailor_soul'] = 'Soul',
+		['murder_coin'] = 'Coin',
+		['shadow_coin'] = 'Shadow Coin',
+		['soulvine_seed'] = 'Soulvine',
+		['spirit_gardener_energy'] = 'Energy',
+		['spirit_gardener_seeds'] = 'Seed',
+		['stars'] = 'Star',
+		['tearbloom_seed'] = 'Tearbloom'
+	}
+	
+	local function Added(obj, tag)
+		if Reference[obj] or not table.find(Collectables.ListEnabled, tags[tag]) then return end
+	
+		local nametag = Instance.new('TextLabel')
+		nametag.Name = tags[tag]
+		nametag.Text = tags[tag]
+		nametag.TextSize = 14 * Scale.Value
+		nametag.FontFace = uipallet.Font
+		local size = getfontbounds(nametag.Text, nametag.TextSize, nametag.FontFace)
+		Reference[obj] = nametag
+	end
+	
+	CollectableESP = vape.Categories.Render:CreateModule({
+		Name = 'CollectableESP',
+		Function = function(callback)
+			if callback then
+				for i in tags do
+					for _, v in collectionService:GetTagged(i) do
+						Added(v, i)
+					end
+					CollectableESP:Clean(collectionService:GetInstanceAddedSignal(i):Connect(function(obj)
+						Added(obj, i)

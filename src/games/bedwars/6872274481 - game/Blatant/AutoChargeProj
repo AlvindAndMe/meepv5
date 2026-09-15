@@ -1,0 +1,35 @@
+	local AutoChargeProj
+	local Percentage
+	
+	local old, hook
+	
+	AutoChargeProj = vape.Categories.Blatant:CreateModule({
+		Name = 'AutoChargeProj',
+		Function = function(callback)
+			if callback then
+				if hook then return end
+				old = bedwars.ProjectileController.calculateImportantLaunchValues
+				hook = function(self, launchdata, ...)
+					local projmeta = AutoChargeProj.Enabled and bedwars.ProjectileMeta[launchdata.projectile]
+					if projmeta and projmeta.predictionLifetimeSec and launchdata.drawDurationSeconds then
+						launchdata.drawDurationSeconds = math.max(launchdata.drawDurationSeconds, projmeta.predictionLifetimeSec * (Percentage.Value / 100))
+						launchdata.velocityMultiplier = math.max(launchdata.velocityMultiplier or 0, Percentage.Value / 100)
+					end
+					return old(self, launchdata, ...)
+				end
+				bedwars.ProjectileController.calculateImportantLaunchValues = hook
+			elseif hook and bedwars.ProjectileController.calculateImportantLaunchValues == hook then
+				bedwars.ProjectileController.calculateImportantLaunchValues = old
+				old, hook = nil, nil
+			end
+		end,
+		Tooltip = 'Instantly charges your projectile item to a certain percentage'
+	})
+	
+	Percentage = AutoChargeProj:CreateSlider({
+		Name = 'Percentage',
+		Min = 0,
+		Max = 100,
+		Default = 50,
+		Suffix = '%'
+	})

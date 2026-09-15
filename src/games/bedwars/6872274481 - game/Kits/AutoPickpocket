@@ -1,0 +1,21 @@
+	local AutoPickpocket
+	local Targets
+	local Range
+	local Hidden
+	
+	local Legit = getFunctionRange(bedwars.MimicController.onKitLocalActivated) or 25
+	local mimicPickPocket = bedwars.Handler:Get('MimicBlockPickPocketPlayer')
+	local sounds = {bedwars.SoundList.MIMIC_PICKPOCKET_1, bedwars.SoundList.MIMIC_PICKPOCKET_2, bedwars.SoundList.MIMIC_PICKPOCKET_3}
+	local random = Random.new()
+	local attempted = setmetatable({}, {__mode = 'k'})
+	local ready, warned = false, 0
+	
+	AutoPickpocket = vape.Categories.Kits:CreateModule({
+		Name = 'AutoPickpocket',
+		Function = function(callback)
+			if callback then
+				ready = false
+				AutoPickpocket:Clean(bedwars.Client:Get('MimicBlockPickPocketReady'):Connect(function(event)
+					if event.player == lplr then
+						ready = event.ready and true or false
+					end

@@ -1,0 +1,67 @@
+	local KitESP
+	local Background
+	local Color = {}
+	local Reference = {}
+	local connections = {}
+	local Folder = Instance.new('Folder')
+	Folder.Parent = vape.gui
+	
+	local ESPKits = {
+		alchemist = {'alchemist_ingedients', 'wild_flower'},
+		beekeeper = {'bee', 'bee'},
+		bigman = {'treeOrb', 'natures_essence_1'},
+		ghost_catcher = {'ghost', 'ghost_orb'},
+		metal_detector = {'hidden-metal', 'iron'},
+		sheep_herder = {'SheepModel', 'purple_hay_bale'},
+		sorcerer = {'alchemy_crystal', 'wild_flower'},
+		star_collector = {'stars', 'crit_star'}
+	}
+	
+	local function Added(ent, icon)
+		local part = ent:IsA('BasePart') and ent or ent:IsA('Model') and (ent.PrimaryPart or ent:FindFirstChild('Root') or ent:FindFirstChildWhichIsA('BasePart'))
+		if not part or Reference[ent] then return end
+	
+		local billboard = Instance.new('BillboardGui')
+		billboard.Name = icon
+		billboard.StudsOffsetWorldSpace = Vector3.new(0, 3, 0)
+		billboard.Size = UDim2.fromOffset(36, 36)
+		billboard.AlwaysOnTop = true
+		billboard.ClipsDescendants = false
+		billboard.Adornee = part
+		billboard.Parent = Folder
+		local blur = addBlur(billboard)
+		blur.Visible = Background.Enabled
+		local image = Instance.new('ImageLabel')
+		image.Size = UDim2.fromOffset(36, 36)
+		image.Position = UDim2.fromScale(0.5, 0.5)
+		image.AnchorPoint = Vector2.new(0.5, 0.5)
+		image.BackgroundColor3 = Color3.fromHSV(Color.Hue, Color.Sat, Color.Value)
+		image.BackgroundTransparency = 1 - (Background.Enabled and Color.Opacity or 0)
+		image.BorderSizePixel = 0
+		image.Image = bedwars.getIcon({itemType = icon}, true)
+		image.Parent = billboard
+		local uicorner = Instance.new('UICorner')
+		uicorner.CornerRadius = UDim.new(0, 4)
+		uicorner.Parent = image
+		Reference[ent] = billboard
+	end
+	
+	KitESP = vape.Categories.Render:CreateModule({
+		Name = 'KitESP',
+		Function = function(callback)
+			if callback then
+				local current
+				repeat
+					if store.equippedKit ~= current then
+						current = store.equippedKit
+						for _, v in connections do
+							v:Disconnect()
+						end
+						table.clear(connections)
+						table.clear(Reference)
+						Folder:ClearAllChildren()
+	
+						local kit = ESPKits[current]
+						if kit then
+							table.insert(connections, collectionService:GetInstanceAddedSignal(kit[1]):Connect(function(ent)
+								Added(ent, kit[2])

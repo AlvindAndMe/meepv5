@@ -1,0 +1,136 @@
+	local DaveyAim
+	local Mode
+	local Position
+	local Range
+	local PlaceCannon
+	local Switch
+	local LaunchCannon
+	local ShowTarget
+	
+	local rayCheck = RaycastParams.new()
+	rayCheck.RespectCanCollide = true
+	
+	local function placeCannon()
+		local item = getItem('cannon')
+		if not item then
+			notif('DaveyAim', 'No cannon in your inventory.', 5, 'warning')
+			return nil
+		end
+	
+		local root = entitylib.character.RootPart
+		local feet = roundPos(root.Position - Vector3.new(0, entitylib.character.HipHeight + 1.5, 0))
+		local spot, closest = nil, math.huge
+	
+		for x = -3, 3 do
+			for z = -3, 3 do
+				for y = 0, 1 do
+					local pos = feet + Vector3.new(x * 3, y * 3, z * 3)
+					local mag = (root.Position - pos).Magnitude
+					if mag > Range.Value or mag >= closest or pos == feet or pos == feet + Vector3.yAxis * 3 then continue end
+					if getPlacedBlock(pos) or getPlacedBlock(pos + Vector3.yAxis * 3) or not getPlacedBlock(pos - Vector3.yAxis * 3) then continue end
+					spot, closest = pos, mag
+				end
+			end
+		end
+	
+		local pos = spot
+		if not pos then
+			notif('DaveyAim', 'Nowhere to put a cannon.', 5, 'warning')
+			return nil
+		end
+	
+		if Switch.Enabled then
+			switchItem(item.tool)
+			local hotbar = getHotbar(item.tool)
+			if hotbar then
+				hotbarSwitch(hotbar)
+			end
+		end
+	
+		bedwars.placeBlock(pos, 'cannon')
+	
+		local timeout = tick() + 1
+		repeat
+			task.wait(0.05)
+			for _, v in collectionService:GetTagged('cannon') do
+				if (v.Position - pos).Magnitude < 1.5 then
+					return v
+				end
+			end
+		until tick() > timeout
+	
+		return nil
+	end
+	
+	local function getApex(delta, velocity, time)
+		local rise = ((delta + Vector3.new(0, workspace.Gravity * time * time * 0.5, 0)) / time - velocity).Y
+		return rise > 0 and (rise * rise) / (2 * workspace.Gravity) or 0
+	end
+	
+	local function findLaunchSpeed(func, depth)
+		local success, constants = pcall(debug.getconstants, func)
+		if not success then return end
+	
+		local speed, matched
+		for _, v in constants do
+			if v == 'LaunchSelfFromCannon' then
+				matched = true
+			elseif type(v) == 'number' and v > 0 then
+				speed = speed or v
+			end
+		end
+		if matched and speed then return speed end
+		if (depth or 0) >= 3 then return end
+	
+		local found, upvalues = pcall(debug.getupvalues, func)
+		if not found then return end
+	
+		for _, v in upvalues do
+			if type(v) == 'function' then
+				local result = findLaunchSpeed(v, (depth or 0) + 1)
+				if result then return result end
+			end
+		end
+	end
+	
+	local function solveTime(delta, velocity, speed, fast, slow)
+		for _ = 1, 60 do
+			local middle = (fast + slow) / 2
+			if ((delta + Vector3.new(0, workspace.Gravity * middle * middle * 0.5, 0)) / middle - velocity).Magnitude > speed then
+				fast = middle
+			else
+				slow = middle
+			end
+		end
+	
+		return (fast + slow) / 2
+	end
+	
+	local function getLaunchTime(origin, delta, velocity, speed)
+		local low, up = 0.0001, 20
+	
+		for _ = 1, 50 do
+			local first, second = low + (up - low) / 3, up - (up - low) / 3
+			if ((delta + Vector3.new(0, workspace.Gravity * first * first * 0.5, 0)) / first - velocity).Magnitude < ((delta + Vector3.new(0, workspace.Gravity * second * second * 0.5, 0)) / second - velocity).Magnitude then
+				up = second
+			else
+				low = first
+			end
+		end
+	
+		local middle = (low + up) / 2
+		if ((delta + Vector3.new(0, workspace.Gravity * middle * middle * 0.5, 0)) / middle - velocity).Magnitude > speed then return end
+	
+		local candidates = {
+			solveTime(delta, velocity, speed, 0.0001, middle),
+			solveTime(delta, velocity, speed, 20, middle)
+		}
+		for i = -24, 24 do
+			local time = middle * (1 + i * 0.05)
+			if time > 0.05 and ((delta + Vector3.new(0, workspace.Gravity * time * time * 0.5, 0)) / time - velocity).Magnitude <= speed then
+				table.insert(candidates, time)
+			end
+		end
+	
+		table.sort(candidates, function(a, b)
+			return getApex(delta, velocity, a) < getApex(delta, velocity, b)

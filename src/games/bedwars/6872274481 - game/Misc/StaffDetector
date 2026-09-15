@@ -1,0 +1,56 @@
+	local StaffDetector
+	local Mode
+	local Clans
+	local Party
+	local Profile
+	local Users
+	local blacklistedclans = {'gg', 'gg2', 'DV', 'DV2'}
+	local blacklisteduserids = {1502104539, 3826146717, 4531785383, 1049767300, 4926350670, 653085195, 184655415, 2752307430, 5087196317, 5744061325, 1536265275}
+	local joined, rejoins, jointimes = {}, {}, {}
+	local counts = {Spectate = 0, Mod = 0, Impossible = 0}
+	local flagcolors = {Spectate = 'rgb(236,129,43)', Mod = 'rgb(250,50,56)', Impossible = 'rgb(180,90,250)'}
+	local entries = {}
+	local window, infolabel, expanded
+	
+	local function refreshViewer()
+		if not window then return end
+	
+		local showlist = expanded and #entries > 0
+		local stuff = {'<b>StaffDetector</b>', '<font size="4"> </font>'}
+		for _, v in {'Spectate', 'Mod', 'Impossible'} do
+			table.insert(stuff, `<font color="{flagcolors[v]}">{v}: {counts[v]}</font>`)
+		end
+	
+		if showlist then
+			table.insert(stuff, '<font size="4"> </font>')
+			for i, v in entries do
+				if i > 8 then break end
+				table.insert(stuff, `{v.Name} <font color="{flagcolors[v.Category]}">{v.Reason}</font>`)
+			end
+		end
+	
+		infolabel.Text = table.concat(stuff, '\n')
+		local size = getfontbounds(removeTags(infolabel.Text), infolabel.TextSize, infolabel.FontFace)
+		local title = getfontbounds('StaffDetector', infolabel.TextSize, Font.new(infolabel.FontFace.Family, Enum.FontWeight.Bold))
+		window.Size = UDim2.fromOffset(math.max(size.X, title.X) + 16, size.Y + (showlist and -8 or 4))
+	end
+	
+	local function staffFunction(plr, checktype)
+		if not vape.Loaded then
+			repeat task.wait() until vape.Loaded
+		end
+	
+		notif('StaffDetector', 'Staff Detected ('..checktype..'): '..plr.Name..' ('..plr.UserId..')', 60, 'alert')
+		whitelist.customtags[plr.Name] = {{text = 'GAME STAFF', color = Color3.new(1, 0, 0)}}
+		local category = checktype == 'impossible_join' and 'Impossible' or checktype == 'spectator' and 'Spectate' or 'Mod'
+		counts[category] += 1
+		table.insert(entries, 1, {Name = plr.Name, Reason = checktype, Category = category})
+		refreshViewer()
+	
+		if Party.Enabled and not checktype:find('clan') then
+			bedwars.PartyController:leaveParty()
+		end
+	
+		if Mode.Value == 'Uninject' then
+			task.spawn(function()
+				vape:Uninject()

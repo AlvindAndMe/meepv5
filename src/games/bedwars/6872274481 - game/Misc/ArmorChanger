@@ -1,0 +1,13 @@
+	local ArmorChanger
+	local Trim
+	local Color
+	local Effect
+	local Rank
+	local added = {}
+	local trims, colors, effects = {}, {}, {}
+	local trimvalues, colorvalues, effectvalues = {}, {}, {}
+	
+	for _, v in bedwars.ArmorTrimType do
+		local meta = bedwars.ArmorTrimMeta[v]
+		local label = meta and meta.name or (tostring(v):gsub('_', ' '):gsub('%a+', function(word)
+			return word:sub(1, 1):upper()..word:sub(2):lower()

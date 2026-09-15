@@ -1,0 +1,30 @@
+	local FastBreak
+	local BedCheck
+	local HiveCheck
+	local Blacklist
+	local Blacklisted
+	local Time
+	
+	local newlist, old = {}
+	
+	FastBreak = vape.Categories.Blatant:CreateModule({
+		Name = 'FastBreak',
+		Function = function(callback)
+			if callback then
+				old = bedwars.BlockBreaker.hitBlock
+				bedwars.BlockBreaker.hitBlock = function(self, ...)
+					local params = select(2, ...)
+					pcall(function()
+						local info = self.clientManager:getBlockSelector():getMouseInfo(1, {ray = params})
+						local block = info and info.target and info.target.blockInstance
+						local blacklisted = false
+						for _, v in block and Blacklist.Enabled and newlist or {} do
+							if v == block.Name or block.Name:find(v) then
+								blacklisted = true
+								break
+							end
+						end
+	
+						if block and not blacklisted and (not BedCheck.Enabled or block.Name ~= 'bed') and (not HiveCheck.Enabled or block.Name ~= 'beehive') then
+							bedwars.BlockBreakController.blockBreaker:setCooldown(Time.Value)
+						end

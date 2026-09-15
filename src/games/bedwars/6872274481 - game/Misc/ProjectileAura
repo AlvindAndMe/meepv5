@@ -1,0 +1,16 @@
+	local ProjectileAura
+	local Targets
+	local Part
+	local FireRate
+	local Range
+	local AFKCheck
+	local List
+	local UseSophia
+	local UseWhim
+	local UseNazar
+	local rayCheck = RaycastParams.new()
+	rayCheck.FilterType = Enum.RaycastFilterType.Exclude
+	local projectileRemote = {InvokeServer = function() end}
+	local FireDelays = {}
+	task.spawn(function()
+		projectileRemote = bedwars.Handler:Get('ProjectileFire').Remote.instance

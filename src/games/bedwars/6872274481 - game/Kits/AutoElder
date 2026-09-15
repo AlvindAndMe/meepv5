@@ -1,0 +1,17 @@
+	local AutoElder
+	local Streamer
+	local Range
+	local Animation
+	local Delay
+	
+	local Legit = getFunctionRange(bedwars.EldertreeController.createTreeOrbInteraction) or 10
+	local cooldowns = {}
+	
+	AutoElder = vape.Categories.Kits:CreateModule({
+		Name = 'AutoElder',
+		Function = function(call)
+			if call then
+				AutoElder:Clean(proximityPromptService.PromptShown:Connect(function(prompt)
+					if Streamer.Enabled and prompt.Name == 'treeOrb' then
+						task.delay(0.1, prompt.InputHoldBegin, prompt)
+					end

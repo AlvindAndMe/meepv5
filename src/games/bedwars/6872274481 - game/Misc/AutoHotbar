@@ -1,0 +1,59 @@
+	local AutoHotbar
+	local Mode
+	local Clear
+	local List
+	local Active
+	
+	local function CreateWindow(self)
+		local selectedslot = 1
+		local window = Instance.new('Frame')
+		window.Name = 'HotbarGUI'
+		window.Size = UDim2.fromOffset(660, 465)
+		window.Position = UDim2.fromScale(0.5, 0.5)
+		window.BackgroundColor3 = uipallet.Main
+		window.AnchorPoint = Vector2.new(0.5, 0.5)
+		window.Visible = false
+		window.Parent = vape.gui.ScaledGui
+		local title = Instance.new('TextLabel')
+		title.Name = 'Title'
+		title.Size = UDim2.new(1, -10, 0, 20)
+		title.Position = UDim2.fromOffset(math.abs(title.Size.X.Offset), 12)
+		title.BackgroundTransparency = 1
+		title.Text = 'AutoHotbar'
+		title.TextXAlignment = Enum.TextXAlignment.Left
+		title.TextColor3 = uipallet.Text
+		title.TextSize = 13
+		title.FontFace = uipallet.Font
+		title.Parent = window
+		local divider = Instance.new('Frame')
+		divider.Name = 'Divider'
+		divider.Size = UDim2.new(1, 0, 0, 1)
+		divider.Position = UDim2.fromOffset(0, 40)
+		divider.BackgroundColor3 = color.Light(uipallet.Main, 0.04)
+		divider.BorderSizePixel = 0
+		divider.Parent = window
+		addBlur(window)
+		local modal = Instance.new('TextButton')
+		modal.Text = ''
+		modal.BackgroundTransparency = 1
+		modal.Modal = true
+		modal.Parent = window
+		local corner = Instance.new('UICorner')
+		corner.CornerRadius = UDim.new(0, 5)
+		corner.Parent = window
+		local close = Instance.new('ImageButton')
+		close.Name = 'Close'
+		close.Size = UDim2.fromOffset(24, 24)
+		close.Position = UDim2.new(1, -35, 0, 9)
+		close.BackgroundColor3 = Color3.new(1, 1, 1)
+		close.BackgroundTransparency = 1
+		close.Image = getvapeasset('catsix/assets/new/close.png')
+		close.ImageColor3 = color.Light(uipallet.Text, 0.2)
+		close.ImageTransparency = 0.5
+		close.AutoButtonColor = false
+		close.Parent = window
+		close.MouseEnter:Connect(function()
+			close.ImageTransparency = 0.3
+			tween:Tween(close, TweenInfo.new(0.2), {
+				BackgroundTransparency = 0.6
+			})

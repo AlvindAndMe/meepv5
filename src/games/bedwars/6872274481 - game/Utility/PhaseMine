@@ -1,0 +1,30 @@
+	local PhaseMine
+	
+	local old = setmetatable({}, {__mode = 'k'})
+	local watching = setmetatable({}, {__mode = 'k'})
+	
+	local function setIgnored(part)
+		if part:IsA('BasePart') and not old[part] then
+			old[part] = true
+			bedwars.QueryUtil:setQueryIgnored(part, true)
+		end
+	end
+	
+	local function Added(char)
+		for _, v in char:QueryDescendants('BasePart') do
+			setIgnored(v)
+		end
+	
+		if not watching[char] then
+			watching[char] = char.ChildAdded:Connect(setIgnored)
+		end
+	end
+	
+	PhaseMine = vape.Categories.Utility:CreateModule({
+		Name = 'PhaseMine',
+		Function = function(callback)
+			if callback then
+				PhaseMine:Clean(entitylib.Events.EntityAdded:Connect(function(ent)
+					if ent.Player then
+						task.delay(1, Added, ent.Character)
+					end

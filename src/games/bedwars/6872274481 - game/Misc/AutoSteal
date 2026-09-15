@@ -1,0 +1,28 @@
+	local AutoSteal
+	local Range
+	local Delay
+	local GUI
+	local Stash = {}
+	
+	local function stealCrate(crate)
+		local value = crate:FindFirstChild('ChestFolderValue')
+		local folder = value and value.Value or nil
+		if not folder then return end
+	
+		local items = {}
+		for _, v in folder:GetChildren() do
+			if v:IsA('Accessory') then
+				table.insert(items, v)
+			end
+		end
+		if #items == 0 then return end
+	
+		local observed = lplr.Character and lplr.Character:FindFirstChild('ObservedChestFolder')
+		observed = observed and observed.Value or nil
+		bedwars.Client:GetNamespace('Inventory'):Get('SetObservedChest'):SendToServer(folder)
+	
+		for _, v in items do
+			local itemType = v.Name
+			task.spawn(function()
+				local suc, res = pcall(function()
+					return bedwars.Client:GetNamespace('Inventory'):Get('ChestGetItem'):CallServer(folder, v)

@@ -1,0 +1,37 @@
+	local AutoUse
+	local Items
+	local Combat
+	local Delay
+	
+	AutoUse = vape.Categories.Inventory:CreateModule({
+		Name = 'AutoUse',
+		Function = function(callback)
+			if callback then
+				repeat
+					if entitylib.isAlive and store.matchState == 1 and not isCasting() and (not Combat.Enabled or (workspace:GetServerTimeNow() - (lplr.Character:GetAttribute('LastDamageTakenTime') or 0)) < 6) then
+						for _, v in Items.ListEnabled do
+							local item = getItem(v)
+							local meta = item and bedwars.ItemMeta[v]
+							local consumable = meta and meta.consumable
+							if consumable then
+								local effect = consumable.statusEffect and consumable.statusEffect.statusEffectType or ({v:gsub('_potion', '')})[1]
+								if not lplr.Character:GetAttribute(`StatusEffect_{effect}`) then
+									bedwars.Handler:Get('ConsumeItem'):Fire('CallServerAsync', {item = item.tool})
+									task.wait(consumable.consumeTime or 1)
+									break
+								end
+							end
+						end
+					end
+					task.wait(Delay.Value)
+				until not AutoUse.Enabled
+			end
+		end,
+		Tooltip = 'Drinks and eats the buff items you list as soon as their effect runs out'
+	})
+	
+	Items = AutoUse:CreateTextList({
+		Name = 'Items',
+		Default = {'fury_potion', 'crit_star', 'vitality_star', 'pie'},
+		Tooltip = 'Item ids, anything the game lets you consume\nfury_potion, jump_potion, serpents_touch_potion, crit_star, vitality_star, snow_cone, pie, watermelon, can_of_beans, sparkling_apple_juice'
+	})

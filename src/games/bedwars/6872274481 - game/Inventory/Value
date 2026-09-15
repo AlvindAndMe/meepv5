@@ -1,0 +1,21 @@
+	local Value
+	local oldclickhold, oldshowprogress
+	
+	local FastConsume = vape.Categories.Inventory:CreateModule({
+		Name = 'FastConsume',
+		Function = function(callback)
+			if callback then
+				oldclickhold = bedwars.ClickHold.startClick
+				oldshowprogress = bedwars.ClickHold.showProgress
+				bedwars.ClickHold.startClick = function(self)
+					self.startedClickTime = tick()
+					local handle = self:showProgress()
+					local clicktime = self.startedClickTime
+					bedwars.RuntimeLib.Promise.defer(function()
+						task.wait(self.durationSeconds * (Value.Value / 40))
+						if handle == self.handle and clicktime == self.startedClickTime and self.closeOnComplete then
+							self:hideProgress()
+							if self.onComplete then self.onComplete() end
+							if self.onPartialComplete then self.onPartialComplete(1) end
+							self.startedClickTime = -1
+						end

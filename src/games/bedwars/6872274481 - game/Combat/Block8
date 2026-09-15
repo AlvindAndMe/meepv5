@@ -1,0 +1,13 @@
+	ChargeSpoof = vape.Categories.Combat:CreateModule({
+		Name = 'ChargeSpoof',
+		Tooltip = 'Reports every swing as charged so hammers, scythes and sabers deal their charged bonus without holding the charge'
+	})
+	
+	ChargeRatio = ChargeSpoof:CreateSlider({
+		Name = 'Charge',
+		Min = 0,
+		Max = 100,
+		Default = 100,
+		Suffix = '%',
+		Tooltip = 'Charge the server is told you held, 100% is the full bonus damage'
+	})

@@ -1,0 +1,23 @@
+	TrapDisabler = vape.Categories.Utility:CreateModule({
+		Name = 'TrapDisabler',
+		Tooltip = 'Drops the reports the game makes you send when you walk into a trap'
+	})
+	
+	TrapSnap = TrapDisabler:CreateToggle({
+		Name = 'Snap traps',
+		Default = true,
+		Tooltip = 'Stops trapper snap traps from marking you'
+	})
+	TrapMine = TrapDisabler:CreateToggle({
+		Name = 'Landmines',
+		Default = true,
+		Tooltip = 'Stops invisible landmines from detonating on you'
+	})
+	TrapTeleport = TrapDisabler:CreateToggle({
+		Name = 'Teleport blocks',
+		Tooltip = 'Stops teleport blocks from moving you'
+	})
+	TrapPortal = TrapDisabler:CreateToggle({
+		Name = 'Void portals',
+		Tooltip = 'Stops void portals from moving you, this also blocks your own'
+	})

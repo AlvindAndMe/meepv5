@@ -1,0 +1,37 @@
+	local Zoom
+	local Level
+	local Speed
+	local Sensitivity
+	
+	local old, oldGet, oldSensitivity
+	local current, target = 0, 0
+	
+	Zoom = vape.Legit:CreateModule({
+		Name = 'Zoom',
+		Category = 'Game',
+		Icon = getvapeasset('catsix/assets/new/legit_fov.png'),
+		Function = function(callback)
+			if callback then
+				local base = bedwars.FovController:getFOV()
+				current, target = base, base / Level.Value
+	
+				old = bedwars.FovController.setFOV
+				oldGet = bedwars.FovController.getFOV
+				bedwars.FovController.setFOV = function(self, value)
+					base = value or base
+					target = base / Level.Value
+					return old(self, current)
+				end
+				bedwars.FovController.getFOV = function()
+					return current
+				end
+	
+				if Sensitivity.Enabled then
+					oldSensitivity = inputService.MouseDeltaSensitivity
+					inputService.MouseDeltaSensitivity = oldSensitivity / Level.Value
+				end
+	
+				Zoom:Clean(runService.PreRender:Connect(function(dt)
+					target = base / Level.Value
+					current = current + (target - current) * math.clamp(Speed.Value * dt, 0, 1)
+					old(bedwars.FovController, current)

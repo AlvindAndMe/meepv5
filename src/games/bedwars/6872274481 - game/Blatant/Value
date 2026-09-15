@@ -1,0 +1,26 @@
+	local Value
+	local VerticalValue
+	local WallCheck
+	local PopBalloons
+	local TP
+	local rayCheck = RaycastParams.new()
+	rayCheck.RespectCanCollide = true
+	local up, down, old = 0, 0
+
+	Fly = vape.Categories.Blatant:CreateModule({
+		Name = 'Fly',
+		Function = function(callback)
+			frictionTable.Fly = callback or nil
+			updateVelocity()
+			if callback then
+				up, down, old = 0, 0, bedwars.BalloonController.deflateBalloon
+				bedwars.BalloonController.deflateBalloon = function() end
+				local tpTick, tpToggle, oldy = tick(), true
+
+				if lplr.Character and (lplr.Character:GetAttribute('InflatedBalloons') or 0) == 0 and getItem('balloon') then
+					bedwars.BalloonController:inflateBalloon()
+				end
+				Fly:Clean(vapeEvents.AttributeChanged.Event:Connect(function(changed)
+					if changed == 'InflatedBalloons' and (lplr.Character:GetAttribute('InflatedBalloons') or 0) == 0 and getItem('balloon') then
+						bedwars.BalloonController:inflateBalloon()
+					end

@@ -1,0 +1,85 @@
+	local AutoCollect
+	local Collectables
+	local Range
+	local Delay
+	local Animation
+	
+	local Request = bedwars.Handler:Get('CollectCollectableEntity')
+	local cooldowns = {}
+	
+	AutoCollect = vape.Categories.Utility:CreateModule({
+		Name = 'AutoCollect',
+		Function = function(callback)
+			if callback then
+				repeat
+					if entitylib.isAlive then
+						local localPosition = entitylib.character.RootPart.Position
+						for _, v in Collectables.ListEnabled do
+							for _, v2 in collectionService:GetTagged(v) do
+								local part = v2:IsA('Model') and v2.PrimaryPart or v2
+								local id = v2:GetAttribute('Id')
+								if part and id and tick() > (cooldowns[v2] or 0) and (localPosition - part.Position).Magnitude <= Range.Value then
+									if Animation.Enabled then
+										bedwars.GameAnimationUtil:playAnimation(lplr.Character, bedwars.AnimationType.PUNCH)
+										bedwars.ViewmodelController:playAnimation(bedwars.AnimationType.FP_USE_ITEM)
+									end
+	
+									Request:Fire('SendToServer', {
+										id = id,
+										collectableName = v2.Name
+									})
+									cooldowns[v2] = tick() + 1
+								end
+							end
+						end
+					end
+					task.wait(Delay.Value)
+				until not AutoCollect.Enabled
+			else
+				table.clear(cooldowns)
+			end
+		end,
+		Tooltip = 'Picks up every kit collectable near you without walking into it'
+	})
+	
+	Range = AutoCollect:CreateSlider({
+		Name = 'Range',
+		Min = 1,
+		Max = 20,
+		Default = 11,
+		Suffix = function(val)
+			return val <= 1 and 'stud' or 'studs'
+		end,
+		Tooltip = 'The server drops collects past 12 studs'
+	})
+	Delay = AutoCollect:CreateSlider({
+		Name = 'Delay',
+		Min = 0.05,
+		Max = 1,
+		Default = 0.1,
+		Decimal = 100,
+		Suffix = 'seconds'
+	})
+	Animation = AutoCollect:CreateToggle({
+		Name = 'Animation',
+		Default = true,
+		Tooltip = 'Plays the pickup animation'
+	})
+	Collectables = AutoCollect:CreateTextList({
+		Name = 'Collectables',
+		Default = {
+			'alchemist_ingedients',
+			'alchemy_crystal',
+			'crystalheart_seed',
+			'forest_environment_plant',
+			'jailor_soul',
+			'murder_coin',
+			'shadow_coin',
+			'soulvine_seed',
+			'spirit_gardener_energy',
+			'spirit_gardener_seeds',
+			'tearbloom_seed'
+		},
+		Darker = true,
+		Tooltip = 'Collectable tags to pick up, stars and hidden metal have their own modules'
+	})

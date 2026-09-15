@@ -1,0 +1,63 @@
+	local OverlayEditor
+	local FillColor
+	local OutlineColor
+	local Thickness
+	local Animate
+	local Speed
+	local overlay, overlayBox, overlayTween
+	local activePart
+	
+	local function bindPart(part)
+		if not OverlayEditor.Enabled or not overlay then return end
+		if not part:IsA('BasePart') or not part.Anchored or part.Transparency ~= 1 then return end
+		local box = part:FindFirstChildOfClass('SelectionBox')
+		if not box then return end
+	
+		box.Visible = false
+		activePart = part
+		if overlayTween then
+			overlayTween:Cancel()
+			overlayTween = nil
+		end
+	
+		if Animate.Enabled and overlay.Parent == gameCamera then
+			overlayTween = tweenService:Create(overlay, TweenInfo.new(Speed.Value, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+				CFrame = part.CFrame,
+				Size = part.Size
+			})
+			overlayTween:Play()
+		else
+			overlay.CFrame = part.CFrame
+			overlay.Size = part.Size
+			overlay.Parent = gameCamera
+		end
+	end
+	
+	OverlayEditor = vape.Categories.Render:CreateModule({
+		Name = 'OverlayEditor',
+		Function = function(callback)
+			if callback then
+				overlay = Instance.new('Part')
+				overlay.Size = Vector3.one * 3
+				overlay.Anchored = true
+				overlay.CanCollide = false
+				overlay.CanQuery = false
+				overlay.CanTouch = false
+				overlay.CastShadow = false
+				overlay.Transparency = 1
+				overlayBox = Instance.new('SelectionBox')
+				overlayBox.Adornee = overlay
+				overlayBox.LineThickness = Thickness.Value
+				overlayBox.Color3 = Color3.fromHSV(OutlineColor.Hue, OutlineColor.Sat, OutlineColor.Value)
+				overlayBox.Transparency = 1 - OutlineColor.Opacity
+				overlayBox.SurfaceColor3 = Color3.fromHSV(FillColor.Hue, FillColor.Sat, FillColor.Value)
+				overlayBox.SurfaceTransparency = 1 - FillColor.Opacity
+				overlayBox.Parent = overlay
+				bedwars.QueryUtil:setQueryIgnored(overlay, true)
+	
+				for _, v in workspace:GetChildren() do
+					bindPart(v)
+				end
+	
+				OverlayEditor:Clean(workspace.ChildAdded:Connect(function(child)
+					task.defer(bindPart, child)

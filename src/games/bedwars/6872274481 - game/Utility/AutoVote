@@ -1,0 +1,57 @@
+	local AutoVote
+	local Option
+	local Delay
+	local Notify
+	
+	local Request = bedwars.Handler:Get('CastPregameVote')
+	local voted
+	
+	AutoVote = vape.Categories.Utility:CreateModule({
+		Name = 'AutoVote',
+		Function = function(callback)
+			if callback then
+				voted = false
+	
+				repeat
+					if store.matchState == 0 then
+						if not voted then
+							Request:Fire('SendToServer', {votingOptionIndex = Option.Value - 1})
+							voted = true
+	
+							if Notify.Enabled then
+								notif('AutoVote', `Voted for option {Option.Value}`, 4)
+							end
+						end
+					else
+						voted = false
+					end
+					task.wait(Delay.Value)
+				until not AutoVote.Enabled
+			else
+				voted = false
+			end
+		end,
+		Tooltip = 'Casts your map vote the moment the pregame vote opens'
+	})
+	
+	Option = AutoVote:CreateSlider({
+		Name = 'Option',
+		Min = 1,
+		Max = 4,
+		Default = 1,
+		Tooltip = 'Which of the voting options to pick, counting from the left'
+	})
+	Delay = AutoVote:CreateSlider({
+		Name = 'Delay',
+		Min = 0.5,
+		Max = 10,
+		Default = 1,
+		Decimal = 10,
+		Suffix = 'seconds'
+	})
+	Notify = AutoVote:CreateToggle({
+		Name = 'Notify',
+		Default = true,
+		Tooltip = 'Tells you when the vote goes in'
+	})
+	

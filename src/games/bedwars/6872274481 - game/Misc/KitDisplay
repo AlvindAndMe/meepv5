@@ -1,0 +1,58 @@
+	local KitDisplay
+	
+	local function renderKit(entry)
+		task.wait(0.3)
+		if not KitDisplay.Enabled or not entry.Parent then return end
+		local name = entry:FindFirstChild('PlayerName', true)
+		if not name then return end
+	
+		local player
+		for _, v in playersService:GetPlayers() do
+			local displayName = bedwars.StreamerModeController and bedwars.StreamerModeController:getDisplayName(v)
+			if v.Name == name.Text or v.DisplayName == name.Text or v:GetAttribute('DisguiseDisplayName') == name.Text or displayName == name.Text then
+				player = v
+				break
+			end
+		end
+		if not player then return end
+	
+		local frame = entry:FindFirstChild('1')
+		local card = frame and frame:FindFirstChild('MatchDraftPlayerCard')
+		if not card then return end
+	
+		local roact = card:FindFirstChild('KitImage')
+		local image = bedwars.BedwarsKitMeta[player:GetAttribute('PlayingAsKits')] or bedwars.BedwarsKitMeta.none
+		if not roact then
+			roact = Instance.new('ImageLabel')
+			roact.BackgroundTransparency = 1
+			roact.AnchorPoint = Vector2.new(1, 0.5)
+			roact.Position = UDim2.fromScale(1.05, 0)
+			roact.Name = 'KitImage'
+			roact.Size = UDim2.fromScale(1.5, 1.5)
+			roact.ZIndex = 1
+			roact.ImageTransparency = 0.4
+			roact.SliceCenter = Rect.new(0, 0, 0, 0)
+			roact.SliceScale = 1
+			roact.ScaleType = Enum.ScaleType.Crop
+			roact.Parent = card
+			KitDisplay:Clean(roact)
+	
+			local ratio = Instance.new('UIAspectRatioConstraint')
+			ratio.Name = '1'
+			ratio.AspectRatio = 1
+			ratio.AspectType = Enum.AspectType.FitWithinMaxSize
+			ratio.DominantAxis = Enum.DominantAxis.Width
+			ratio.Parent = roact
+		end
+	
+		roact.Image = image.renderImage
+		roact.Position = UDim2.fromScale(1.05, 0)
+		tweenService:Create(roact, TweenInfo.new(0.2, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out), {
+			Position = UDim2.fromScale(1.05, 0.5)
+		}):Play()
+	
+		local connection = player:GetAttributeChangedSignal('PlayingAsKits'):Connect(function()
+			if not KitDisplay.Enabled or not roact.Parent then return end
+			image = bedwars.BedwarsKitMeta[player:GetAttribute('PlayingAsKits')] or bedwars.BedwarsKitMeta.none
+			roact.Image = image.renderImage
+			roact.Position = UDim2.fromScale(1.05, 0)

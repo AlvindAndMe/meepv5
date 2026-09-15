@@ -1,0 +1,20 @@
+	local old
+	
+	vape.Legit:CreateModule({
+		Name = 'Clean Kit',
+		Category = 'Game',
+		Icon = getvapeasset('catsix/assets/new/legit_cleankit.png'),
+		Function = function(callback)
+			if callback then
+				old = bedwars.WindWalkerController.spawnOrb
+				bedwars.WindWalkerController.spawnOrb = function() end
+				local zephyreffect = lplr.PlayerGui:FindFirstChild('WindWalkerEffect', true)
+				if zephyreffect then
+					zephyreffect.Visible = false
+				end
+			else
+				bedwars.WindWalkerController.spawnOrb = old
+			end
+		end,
+		Tooltip = 'Removes zephyr status indicator'
+	})

@@ -1,0 +1,18 @@
+	local AutoCounter
+	local Range
+	local Limit
+	local AutoSwitch = {}
+	
+	AutoCounter = vape.Categories.Utility:CreateModule({
+		Name = 'AutoCounterTNT',
+		Function = function(callback)
+			if callback then
+				local tnts, placed = {}, {}
+				AutoCounter:Clean(workspace.ChildAdded:Connect(function(v)
+					if v.Name == 'tnt' then
+						table.insert(tnts, v)
+						v.Destroying:Once(function()
+							local index = table.find(tnts, v)
+							if index then
+								table.remove(tnts, index)
+							end

@@ -1,0 +1,43 @@
+	local CropESP
+	local Color
+	local Transparency
+	local Scale
+	local Reference = {}
+	local Folder = Instance.new('Folder')
+	if vape.ThreadFix then
+		setthreadidentity(8)
+	end
+	Folder.Parent = vape.gui
+	
+	local function Added(ent)
+		local nametag = Instance.new('TextLabel')
+		nametag.TextSize = 14 * Scale.Value
+		nametag.Font = Enum.Font.Arial
+		nametag.Text = bedwars.ItemMeta[ent.Name] and bedwars.ItemMeta[ent.Name].displayName or 'Crop'
+		local size = getfontbounds(nametag.Text, nametag.TextSize, nametag.FontFace)
+		nametag.Name = ent.Name
+		nametag.Size = UDim2.fromOffset(size.X + 8, size.Y + 7)
+		nametag.AnchorPoint = Vector2.new(0.5, 1)
+		nametag.BackgroundColor3 = Color3.new()
+		nametag.BackgroundTransparency = Transparency.Value
+		nametag.BorderSizePixel = 0
+		nametag.Visible = false
+		nametag.TextColor3 = Color3.fromHSV(Color.Hue, Color.Sat, Color.Value)
+		nametag.RichText = true
+		nametag.Parent = Folder
+		Reference[ent] = nametag
+	end
+	
+	CropESP = vape.Categories.Render:CreateModule({
+		Name = 'CropESP',
+		Function = function(callback)
+			if callback then
+				for _, v in collectionService:GetTagged('HarvestableCrop') do
+					Added(v)
+				end
+				CropESP:Clean(collectionService:GetInstanceAddedSignal('HarvestableCrop'):Connect(Added))
+				CropESP:Clean(collectionService:GetInstanceRemovedSignal('HarvestableCrop'):Connect(function(ent)
+					if Reference[ent] then
+						Reference[ent]:Destroy()
+						Reference[ent] = nil
+					end

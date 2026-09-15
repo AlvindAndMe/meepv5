@@ -1,0 +1,59 @@
+	local ChestSteal
+	local Range
+	local Open
+	local Skywars
+	local Legit
+	local Visualize
+	local FillColor
+	local OutlineColor
+	local Animate
+	local Speed
+	local Delays = {}
+	local Boxes = {}
+	local Tweens = {}
+	local BoxTargets = {}
+	
+	local function updateBoxes(targets)
+		for i2, v2 in Boxes do
+			local chest = targets and targets[i2]
+			if chest ~= BoxTargets[i2] then
+				if Tweens[i2] then
+					Tweens[i2]:Cancel()
+					Tweens[i2] = nil
+				end
+	
+				if not chest then
+					v2.Parent = nil
+				elseif Animate.Enabled and v2.Parent == gameCamera then
+					Tweens[i2] = tweenService:Create(v2, TweenInfo.new(Speed.Value, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {CFrame = chest.CFrame})
+					Tweens[i2]:Play()
+				else
+					v2.CFrame = chest.CFrame
+					v2.Parent = gameCamera
+				end
+				BoxTargets[i2] = chest
+			end
+	
+			if chest then
+				v2.SelectionBox.Color3 = Color3.fromHSV(OutlineColor.Hue, OutlineColor.Sat, OutlineColor.Value)
+				v2.SelectionBox.Transparency = 1 - OutlineColor.Opacity
+				v2.SelectionBox.SurfaceColor3 = Color3.fromHSV(FillColor.Hue, FillColor.Sat, FillColor.Value)
+				v2.SelectionBox.SurfaceTransparency = 1 - FillColor.Opacity
+			end
+		end
+	end
+	
+	local function lootChest(chest)
+		chest = chest and chest.Value or nil
+		local chestitems = chest and chest:GetChildren() or {}
+		if #chestitems > 1 and (Delays[chest] or 0) < tick() then
+			Delays[chest] = tick() + 0.2
+			local observed = lplr.Character and lplr.Character:FindFirstChild('ObservedChestFolder')
+			observed = observed and observed.Value or nil
+			bedwars.Client:GetNamespace('Inventory'):Get('SetObservedChest'):SendToServer(chest)
+	
+			for _, v in chestitems do
+				if v:IsA('Accessory') then
+					task.spawn(function()
+						pcall(function()
+							bedwars.Client:GetNamespace('Inventory'):Get('ChestGetItem'):CallServer(chest, v)

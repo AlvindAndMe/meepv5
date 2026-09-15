@@ -1,0 +1,83 @@
+	local AutoAgni
+	local VoidSave
+	local Escape
+	local Targets
+	local Health
+	local Range
+	local nextBoost = 0
+	
+	AutoAgni = vape.Categories.Kits:CreateModule({
+		Name = 'AutoAgni',
+		Function = function(callback)
+			if callback then
+				nextBoost = 0
+	
+				repeat
+					if entitylib.isAlive and store.equippedKit == 'agni' and tick() >= nextBoost and bedwars.AbilityController:canUseAbility('rocket_detonate', {disableBlockedAbilityAlert = true}) then
+						local root = entitylib.character.RootPart
+						local humanoid = entitylib.character.Humanoid
+						local boost = false
+	
+						if VoidSave.Enabled and root.AssemblyLinearVelocity.Y <= -20 and not workspace:Raycast(root.Position, Vector3.new(0, -2000, 0), store.airRay) then
+							boost = true
+						end
+	
+						if not boost and Escape.Enabled and humanoid.Health <= (humanoid.MaxHealth * (Health.Value / 100)) then
+							boost = #entitylib.AllPosition({
+								Range = Range.Value,
+								Part = 'RootPart',
+								Players = Targets.Players.Enabled,
+								NPCs = Targets.NPCs.Enabled
+							}) > 0
+						end
+	
+						if boost then
+							nextBoost = tick() + 1
+							bedwars.AbilityController:useAbility('rocket_detonate')
+						end
+					end
+					task.wait(0.05)
+				until not AutoAgni.Enabled
+			end
+		end,
+		Tooltip = 'Spends Rocket Boost on saving you from the void and on getting out of fights you are losing'
+	})
+	
+	VoidSave = AutoAgni:CreateToggle({
+		Name = 'Void save',
+		Default = true,
+		Tooltip = 'Boosts the moment you drop off the map with nothing below you'
+	})
+	Escape = AutoAgni:CreateToggle({
+		Name = 'Escape',
+		Default = true,
+		Function = function(callback)
+			if Range then
+				Health.Object.Visible = callback
+				Range.Object.Visible = callback
+				Targets.Object.Visible = callback
+			end
+		end,
+		Tooltip = 'Boosts away once you are low and somebody is on you'
+	})
+	Targets = AutoAgni:CreateTargets({
+		Players = true,
+		NPCs = true
+	})
+	Health = AutoAgni:CreateSlider({
+		Name = 'Health',
+		Min = 1,
+		Max = 100,
+		Default = 35,
+		Suffix = '%'
+	})
+	Range = AutoAgni:CreateSlider({
+		Name = 'Range',
+		Min = 1,
+		Max = 60,
+		Default = 20,
+		Suffix = function(val)
+			return val <= 1 and 'stud' or 'studs'
+		end
+	})
+	

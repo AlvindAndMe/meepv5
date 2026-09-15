@@ -1,0 +1,46 @@
+	local BulletTracers
+	local Material
+	local Lifetime
+	local Curve
+	local Opacity
+	local Thickness
+	local Color
+	local Fade
+	
+	local rayCheck = RaycastParams.new()
+	rayCheck.FilterType = Enum.RaycastFilterType.Exclude
+	
+	BulletTracers = vape.Categories.Render:CreateModule({
+		Name = 'ProjectileTracers',
+		Function = function(callback)
+			if callback then
+				BulletTracers:Clean(workspace.ChildAdded:Connect(function(projectile)
+					task.delay(0, function()
+						if not BulletTracers.Enabled or not projectile.Parent or projectile:GetAttribute('ProjectileShooter') ~= lplr.UserId then
+							return
+						end
+						local filter = {projectile}
+						if lplr.Character then table.insert(filter, lplr.Character) end
+						rayCheck.FilterDescendantsInstances = filter
+						local root = projectile:IsA('BasePart') and projectile or projectile:IsA('Model') and projectile.PrimaryPart
+						local meta = bedwars.ProjectileMeta[projectile.Name]
+						if not root or not meta then return end
+						local origin = root.Position
+						local velocity = root.AssemblyLinearVelocity
+						local velocityMagnitude = velocity.Magnitude
+						if velocityMagnitude <= 0 then
+							return
+						end
+						local velocityUnit = velocity / velocityMagnitude
+						local gravity = meta.gravitationalAcceleration or workspace.Gravity
+						local ray = workspace:Raycast(origin, velocityUnit * 2000, rayCheck)
+						local endpoint = ray and ray.Position or (origin + velocityUnit * 2000)
+						local travelTime = (endpoint - origin).Magnitude / velocityMagnitude
+						prediction.SpawnArcTracer(origin, velocityUnit, velocityMagnitude, gravity, travelTime, Curve.Value, {
+							Color = Color3.fromHSV(Color.Hue, Color.Sat, Color.Value),
+							Transparency = Opacity.Value,
+							Thick = Thickness.Value,
+							Material = Enum.Material[Material.Value],
+							Lifetime = Lifetime.Value,
+							Fade = Fade.Enabled
+						})

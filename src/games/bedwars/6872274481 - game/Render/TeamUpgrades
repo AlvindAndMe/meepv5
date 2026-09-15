@@ -1,0 +1,85 @@
+	local TeamUpgrades
+	local OwnTeam
+	local BedUpgrades
+	local Color
+	local Transparency
+	local Scale
+	local Reference = {}
+	local Folder = Instance.new('Folder')
+	Folder.Parent = vape.gui
+	
+	local numerals = {'I', 'II', 'III', 'IV', 'V'}
+	
+	local function getAnchor(obj)
+		return obj:IsA('Model') and (obj.PrimaryPart or obj:FindFirstChildWhichIsA('BasePart')) or obj
+	end
+	
+	local function getText(team)
+		local state = bedwars.Store:getState().Bedwars
+		local upgrades = state.teamUpgrades[team] or {}
+		local bought = {}
+	
+		for i, v in bedwars.TeamUpgradeMeta do
+			local tier = upgrades[i]
+			if tier and tier > 0 then
+				table.insert(bought, `{v.name} {numerals[tier] or tier}`)
+			end
+		end
+	
+		table.sort(bought)
+	
+		if BedUpgrades.Enabled then
+			local bed = state.bedTeamUpgrades[team] or {}
+			if bed.bed_shield then
+				table.insert(bought, 'Bed Shield')
+			end
+			if bed.bed_alarm then
+				table.insert(bought, 'Bed Alarm')
+			end
+		end
+	
+		return `Team {team} | {#bought > 0 and table.concat(bought, ', ') or 'No upgrades'}`
+	end
+	
+	local function Added(obj, tag)
+		local team = tag:match('^(%d+)_TeamOreGenerator')
+		local anchor = team and getAnchor(obj)
+		if not anchor then return end
+		if not OwnTeam.Enabled and team == lplr:GetAttribute('Team') then return end
+	
+		local nametag = Instance.new('TextLabel')
+		nametag.Name = `Team{team}`
+		nametag.Text = getText(team)
+		nametag.TextSize = 14 * Scale.Value
+		nametag.Font = Enum.Font.Arial
+		local size = getfontbounds(nametag.Text, nametag.TextSize, nametag.FontFace)
+		nametag.Size = UDim2.fromOffset(size.X + 8, size.Y + 7)
+		nametag.AnchorPoint = Vector2.new(0.5, 1)
+		nametag.BackgroundColor3 = Color3.new()
+		nametag.BackgroundTransparency = Transparency.Value
+		nametag.BorderSizePixel = 0
+		nametag.Visible = false
+		nametag.TextColor3 = Color3.fromHSV(Color.Hue, Color.Sat, Color.Value)
+		nametag.Parent = Folder
+		Reference[anchor] = {Label = nametag, Team = team}
+	end
+	
+	local function refresh()
+		for _, v in Reference do
+			v.Label.Text = getText(v.Team)
+			local size = getfontbounds(v.Label.Text, v.Label.TextSize, v.Label.FontFace)
+			v.Label.Size = UDim2.fromOffset(size.X + 8, size.Y + 7)
+		end
+	end
+	
+	TeamUpgrades = vape.Categories.Render:CreateModule({
+		Name = 'TeamUpgrades',
+		Function = function(callback)
+			if callback then
+				for _, tag in collectionService:GetAllTags() do
+					if tag:match('^%d+_TeamOreGenerator$') then
+						for _, v in collectionService:GetTagged(tag) do
+							Added(v, tag)
+						end
+						TeamUpgrades:Clean(collectionService:GetInstanceAddedSignal(tag):Connect(function(obj)
+							Added(obj, tag)

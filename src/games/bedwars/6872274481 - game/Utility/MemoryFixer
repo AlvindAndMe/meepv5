@@ -1,0 +1,41 @@
+	local MemoryFixer
+	local Sync
+	local Interval
+	local Notify
+	local signals = {'Heartbeat', 'PostSimulation', 'PreAnimation', 'PreRender', 'PreSimulation', 'RenderStepped', 'Stepped'}
+	
+	local function clean()
+		if not getconnections or not getfunctionhash or not isexecutorclosure then
+			return 0
+		end
+	
+		local removed, seen = 0, {}
+		for _, v in signals do
+			for _, v2 in getconnections(runService[v]) do
+				if v2.Function and not v2.ForeignState and isexecutorclosure(v2.Function) then
+					local hash = v..getfunctionhash(v2.Function)
+					if seen[hash] then
+						v2:Disconnect()
+						removed += 1
+					else
+						seen[hash] = true
+					end
+				end
+			end
+		end
+	
+		if Sync.Enabled then
+			for _, v in bedwars.SyncEvents do
+				if typeof(v) == 'table' and typeof(v.entries) == 'table' then
+					table.clear(seen)
+					for i2, v2 in v.entries do
+						local callback = v2.callbackInfo and v2.callbackInfo.callback
+						if callback and isexecutorclosure(callback) then
+							local hash = getfunctionhash(callback)
+							if seen[hash] then
+								v.entries[i2] = nil
+								v.isSorted = false
+								removed += 1
+							else
+								seen[hash] = true
+							end

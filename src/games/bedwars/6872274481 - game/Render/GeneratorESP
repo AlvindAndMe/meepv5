@@ -1,0 +1,59 @@
+	local GeneratorESP
+	local Transparency
+	local Scale
+	local Whitelist
+	local Whitelisted = {}
+	local Reference, Cooldown = {}, {}
+	local Folder = Instance.new('Folder')
+	Folder.Parent = vape.gui
+	
+	local function Added(ent)
+		local app = ent:FindFirstChild('RoactTree')
+		app = app and app:FindFirstChild('TeamOreGeneratorApp')
+		if not app then return end
+	
+		local title = app:FindFirstChild('Title', true)
+		local name, tier = title and title.Text, 'iron'
+		if not name then
+			local ore = ent:GetAttribute('Id')
+			if not ore then return end
+			ore = ore:sub(1, #ore - 2)
+			tier = ore:lower()
+			name = `{ore:sub(1, 1):upper()}{ore:sub(2)} Generator`
+		end
+	
+		if Whitelist.Enabled and not table.find(Whitelisted.ListEnabled, tier) then return end
+	
+		local nametag = Instance.new('TextLabel')
+		nametag.Name = name
+		nametag.Text = `{name} | T{ent:GetAttribute('GeneratorLevel') or 0}`
+		nametag.TextSize = 14 * Scale.Value
+		nametag.Font = Enum.Font.Arial
+		local size = getfontbounds(removeTags(nametag.Text), nametag.TextSize, nametag.FontFace)
+		nametag.Size = UDim2.fromOffset(size.X + 8, size.Y + 7)
+		nametag.AnchorPoint = Vector2.new(0.5, 1)
+		nametag.BackgroundColor3 = Color3.new()
+		nametag.BackgroundTransparency = Transparency.Value
+		nametag.BorderSizePixel = 0
+		nametag.Visible = false
+		nametag.TextColor3 = Color3.new(1, 1, 1)
+		nametag.RichText = true
+		nametag.Parent = Folder
+		Cooldown[ent] = app:FindFirstChild('Countdown', true) or app:FindFirstChild('Timer', true)
+		Reference[ent] = nametag
+	end
+	
+	GeneratorESP = vape.Categories.Render:CreateModule({
+		Name = 'GeneratorESP',
+		Function = function(callback)
+			if callback then
+				for _, v in collectionService:GetTagged('Generator') do
+					Added(v)
+				end
+				GeneratorESP:Clean(collectionService:GetInstanceAddedSignal('Generator'):Connect(Added))
+				GeneratorESP:Clean(collectionService:GetInstanceRemovedSignal('Generator'):Connect(function(ent)
+					if Reference[ent] then
+						Reference[ent]:Destroy()
+						Reference[ent] = nil
+						Cooldown[ent] = nil
+					end

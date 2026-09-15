@@ -1,0 +1,47 @@
+	local AutoFish
+	local Show
+	local Blacklist
+	local Minigame
+	local MinigameMode = {}
+	local CompleteDelay = {}
+	local Reaction = {}
+	local Clicks = {}
+	local Cast
+	local CastDelay = {}
+	local rejects = {}
+	
+	local old
+	
+	local function getCastSpot()
+		local localPosition = entitylib.character.RootPart.Position
+		local open
+	
+		for dist = 5, 17, 3 do
+			for angle = 0, 330, 30 do
+				local spot = localPosition + (CFrame.Angles(0, math.rad(angle), 0).LookVector * dist)
+				local ray = entitylib.Raycast(spot + Vector3.new(0, 8, 0), Vector3.new(0, -26, 0), store.airRay)
+				local check = ray and ray.Position or spot
+				local rejected = false
+				for _, v in rejects do
+					if (v - check).Magnitude < 4 then
+						rejected = true
+						break
+					end
+				end
+	
+				if not ray then
+					if not open and not rejected then
+						open = spot
+					end
+				elseif ray.Material == Enum.Material.Water and not rejected then
+					return ray.Position
+				end
+			end
+		end
+		return open
+	end
+	
+	local function playMinigame()
+		local util = bedwars.FishermanUtil
+		local marker, zone
+		local deadline = tick() + 3

@@ -1,0 +1,48 @@
+	local ItemESP
+	local Distance
+	local Transparency
+	local Scale
+	local WhitelistOnly
+	local Whitelist = {}
+	local Reference = {}
+	local Labels = setmetatable({}, {__mode = 'k'})
+	local Folder = Instance.new('Folder')
+	Folder.Parent = vape.gui
+	
+	local function Added(ent)
+		local name = bedwars.ItemMeta[ent.Name] and bedwars.ItemMeta[ent.Name].displayName or ent.Name
+		if WhitelistOnly.Enabled and not table.find(Whitelist.ListEnabled, name:lower()) then return end
+	
+		local amount = ent:GetAttribute('Amount') or 1
+		local nametag = Instance.new('TextLabel')
+		nametag.Name = name
+		nametag.Text = `{name}{amount >= 2 and ` x{amount}` or ''}`
+		nametag.TextSize = 14 * Scale.Value
+		nametag.Font = Enum.Font.Arial
+		local size = getfontbounds(removeTags(nametag.Text), nametag.TextSize, nametag.FontFace)
+		nametag.Size = UDim2.fromOffset(size.X + 8, size.Y + 7)
+		nametag.AnchorPoint = Vector2.new(0.5, 1)
+		nametag.BackgroundColor3 = Color3.new()
+		nametag.BackgroundTransparency = Transparency.Value
+		nametag.BorderSizePixel = 0
+		nametag.Visible = false
+		nametag.TextColor3 = Color3.new(1, 1, 1)
+		nametag.RichText = true
+		nametag.Parent = Folder
+		Labels[ent] = nil
+		Reference[ent] = nametag
+	end
+	
+	ItemESP = vape.Categories.Render:CreateModule({
+		Name = 'ItemESP',
+		Function = function(callback)
+			if callback then
+				for _, v in collectionService:GetTagged('ItemDrop') do
+					Added(v)
+				end
+				ItemESP:Clean(collectionService:GetInstanceAddedSignal('ItemDrop'):Connect(Added))
+				ItemESP:Clean(collectionService:GetInstanceRemovedSignal('ItemDrop'):Connect(function(ent)
+					if Reference[ent] then
+						Reference[ent]:Destroy()
+						Reference[ent] = nil
+					end

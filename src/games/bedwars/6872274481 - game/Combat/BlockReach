@@ -1,0 +1,79 @@
+	local BlockReach
+	local BlockRange
+	local BreakReach
+	local BreakRange
+	local SwordReach
+	local SwordRange
+	
+	local old
+	local swingConnection
+	local lastExtendedSwing = 0
+	
+	local function extendedSwordHit()
+		if not entitylib.isAlive then return end
+	
+		local sword = getSword()
+		if not sword or (tick() - lastExtendedSwing) < getSwordSpeed(sword.tool) then return end
+	
+		local reach = getReach(sword.tool)
+		local localPosition = entitylib.character.RootPart.Position
+		local target = entitylib.EntityPosition({
+			Origin = localPosition,
+			Range = SwordRange.Value + 2,
+			Part = 'RootPart',
+			Players = true,
+			NPCs = true,
+			Wallcheck = true
+		})
+		if not target then return end
+	
+		local delta = target.RootPart.Position - localPosition
+		if delta.Magnitude <= reach then return end
+	
+		local direction = CFrame.lookAt(localPosition, target.RootPart.Position).LookVector
+		lastExtendedSwing = tick()
+		bedwars.SwordController.lastAttack = workspace:GetServerTimeNow()
+		bedwars.Handler:Get('SwordHit'):Fire('SendToServer', {
+			weapon = sword.tool,
+			chargedAttack = {chargeRatio = 0},
+			entityInstance = target.Character,
+			validate = {
+				raycast = {
+					cameraPosition = {value = gameCamera.CFrame.Position},
+					cursorDirection = {value = direction}
+				},
+				targetPosition = {value = target.Character:GetPivot().Position},
+				selfPosition = {value = localPosition + direction * math.max(delta.Magnitude - (reach - 0.001), 0)}
+			}
+		})
+	end
+	
+	Reach = vape.Categories.Combat:CreateModule({
+		Name = 'Reach',
+		Function = function(callback)
+			bedwars.CombatConstant.RAYCAST_SWORD_CHARACTER_DISTANCE = callback and SwordReach.Enabled and SwordRange.Value + 2 or 14.4
+			if callback then
+				old = bedwars.BlockSelector.getMouseInfo
+				bedwars.BlockSelector.getMouseInfo = function(self, mode, args)
+					args = args or {}
+					if mode == 0 then
+						args.range = BlockReach.Enabled and BlockRange.Value or 24
+					elseif mode == 1 then
+						args.range = BreakReach.Enabled and BreakRange.Value or 18
+					end
+					return old(self, mode, args)
+				end
+			else
+				bedwars.BlockSelector.getMouseInfo = old
+			end
+	
+			if swingConnection then
+				swingConnection:Disconnect()
+				swingConnection = nil
+			end
+			if not canDebug and Reach.Enabled and SwordReach.Enabled then
+				swingConnection = inputService.InputBegan:Connect(function(input, processed)
+					if processed then return end
+					if input.UserInputType ~= Enum.UserInputType.MouseButton1 and input.UserInputType ~= Enum.UserInputType.Touch then return end
+	
+					extendedSwordHit()

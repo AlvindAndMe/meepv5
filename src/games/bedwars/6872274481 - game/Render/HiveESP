@@ -1,0 +1,49 @@
+	local HiveESP
+	local Color
+	local Transparency
+	local Scale
+	local Reference = {}
+	local Folder = Instance.new('Folder')
+	Folder.Parent = vape.gui
+	
+	local function Added(ent)
+		local userid = ent:GetAttribute('PlacedByUserId')
+		local placer = userid and playersService:GetPlayerByUserId(userid)
+		local name = placer and placer.Name
+		if not name and userid then
+			local suc, res = pcall(playersService.GetNameFromUserIdAsync, playersService, userid)
+			name = suc and res or nil
+		end
+	
+		local level = ent:GetAttribute('Level') or 0
+		local nametag = Instance.new('TextLabel')
+		nametag.Name = name or 'Unknown'
+		nametag.Text = `{nametag.Name}'s beehive | {level} Bee{level >= 2 and 's' or ''}`
+		nametag.TextSize = 14 * Scale.Value
+		nametag.Font = Enum.Font.Arial
+		local size = getfontbounds(removeTags(nametag.Text), nametag.TextSize, nametag.FontFace)
+		nametag.Size = UDim2.fromOffset(size.X + 8, size.Y + 7)
+		nametag.AnchorPoint = Vector2.new(0.5, 1)
+		nametag.BackgroundColor3 = Color3.new()
+		nametag.BackgroundTransparency = Transparency.Value
+		nametag.BorderSizePixel = 0
+		nametag.Visible = false
+		nametag.TextColor3 = Color3.fromHSV(Color.Hue, Color.Sat, Color.Value)
+		nametag.RichText = true
+		nametag.Parent = Folder
+		Reference[ent] = nametag
+	end
+	
+	HiveESP = vape.Categories.Render:CreateModule({
+		Name = 'BeehiveESP',
+		Function = function(callback)
+			if callback then
+				for _, v in collectionService:GetTagged('beehive') do
+					Added(v)
+				end
+				HiveESP:Clean(collectionService:GetInstanceAddedSignal('beehive'):Connect(Added))
+				HiveESP:Clean(collectionService:GetInstanceRemovedSignal('beehive'):Connect(function(ent)
+					if Reference[ent] then
+						Reference[ent]:Destroy()
+						Reference[ent] = nil
+					end

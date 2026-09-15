@@ -1,0 +1,25 @@
+	local Speed
+	local Mode
+	local Value
+	local WallCheck
+	local AutoJump
+	local AlwaysJump
+	local modifier = {}
+	local rayCheck = RaycastParams.new()
+	rayCheck.RespectCanCollide = true
+	
+	Speed = vape.Categories.Blatant:CreateModule({
+		Name = 'Speed',
+		Function = function(callback)
+			local blatant = callback and Mode.Value == 'Blatant'
+			frictionTable.Speed = blatant or nil
+			updateVelocity()
+			debug.setconstant(bedwars.WindWalkerController.updateSpeed, 7, blatant and 'constantSpeedMultiplier' or 'moveSpeedMultiplier')
+			bedwars.StatefulEntityKnockbackController.lastImpulseTime = blatant and math.huge or time()
+	
+			if callback then
+				if not blatant then
+					modifier.moveSpeedMultiplier = Value.Value / 20
+					local handle = bedwars.SprintController:getMovementStatusModifier():addModifier(modifier)
+					Speed:Clean(function()
+						handle:Destroy()

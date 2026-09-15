@@ -1,0 +1,17 @@
+	local AutoStar
+	local Streamer
+	local Range
+	local Animation
+	local Delay
+	
+	local cooldowns = {}
+	
+	AutoStar = vape.Categories.Kits:CreateModule({
+		Name = 'AutoStarCollector',
+		Function = function(callback)
+			if callback then
+				AutoStar:Clean(proximityPromptService.PromptShown:Connect(function(prompt)
+					if Streamer.Enabled and prompt.Name == 'stars_ProximityPrompt' then
+						task.wait(0.1)
+						prompt:InputHoldBegin()
+					end

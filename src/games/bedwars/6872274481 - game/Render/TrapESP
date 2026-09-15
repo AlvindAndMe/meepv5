@@ -1,0 +1,79 @@
+	local TrapESP
+	local Traps
+	local Distance
+	local Owner
+	local Transparency
+	local Scale
+	local Color = {}
+	local Reference = {}
+	local Folder
+	
+	local names = {
+		['glue_trap'] = 'Gloop',
+		['grave_trap'] = 'Grave',
+		['grave_trap_block'] = 'Grave',
+		['invisible_landmine'] = 'Landmine',
+		['lucky_block_trap'] = 'Lucky Trap',
+		['snap_trap'] = 'Snap Trap',
+		['spike_trap'] = 'Spikes',
+		['tesla_trap'] = 'Tesla'
+	}
+	
+	local function Added(block)
+		if Reference[block] or not block:IsA('BasePart') then return end
+	
+		local label = names[block.Name]
+		if not label or not table.find(Traps.ListEnabled, label) then return end
+	
+		local nametag = Instance.new('TextLabel')
+		nametag.Name = label
+		nametag.Text = label
+		nametag.TextSize = 14 * Scale.Value
+		nametag.FontFace = uipallet.Font
+		local size = getfontbounds(nametag.Text, nametag.TextSize, nametag.FontFace)
+		nametag.Size = UDim2.fromOffset(size.X + 8, size.Y + 7)
+		nametag.AnchorPoint = Vector2.new(0.5, 1)
+		nametag.BackgroundColor3 = Color3.new()
+		nametag.BackgroundTransparency = Transparency.Value
+		nametag.BorderSizePixel = 0
+		nametag.Visible = false
+		nametag.TextColor3 = Color3.fromHSV(Color.Hue, Color.Sat, Color.Value)
+		nametag.Parent = Folder
+		Reference[block] = nametag
+	end
+	
+	local function isMine(block)
+		local user = block:GetAttribute('PlacedByUserId')
+		if not user or user == 0 then
+			return false
+		end
+		if user == lplr.UserId then
+			return true
+		end
+	
+		local placer = playersService:GetPlayerByUserId(user)
+		return placer ~= nil and placer:GetAttribute('Team') == lplr:GetAttribute('Team')
+	end
+	
+	TrapESP = vape.Categories.Render:CreateModule({
+		Name = 'TrapESP',
+		Function = function(callback)
+			if callback then
+				if not Folder then
+					if vape.ThreadFix then
+						vape.ThreadFix()
+					end
+					Folder = Instance.new('Folder')
+					Folder.Parent = vape.gui
+				end
+	
+				for _, v in collectionService:GetTagged('block') do
+					Added(v)
+				end
+	
+				TrapESP:Clean(collectionService:GetInstanceAddedSignal('block'):Connect(Added))
+				TrapESP:Clean(collectionService:GetInstanceRemovedSignal('block'):Connect(function(block)
+					if Reference[block] then
+						Reference[block]:Destroy()
+						Reference[block] = nil
+					end

@@ -1,0 +1,27 @@
+	local AutoMiner
+	local Delay
+	local Animation
+	local Range
+	
+	local Legit = getFunctionRange(bedwars.MinerController.setupMinerPrompts) or 0
+	
+	AutoMiner = vape.Categories.Utility:CreateModule({
+		Name = 'AutoMiner',
+		Function = function(callback)
+			if callback then
+				local petrified = collection('petrified-player', AutoMiner)
+				local cooldown = 0
+	
+				repeat
+					if entitylib.isAlive and tick() - cooldown >= math.max(Delay.Value, 0.25) then
+						local localPosition = entitylib.character.RootPart.Position
+						for _, v in petrified do
+							local root = v:IsA('Model') and v.PrimaryPart or v
+							local petrifyId = v:GetAttribute('PetrifyId')
+							if root and petrifyId and (localPosition - root.Position).Magnitude <= Range.Value then
+								if Animation.Enabled then
+									bedwars.GameAnimationUtil:playAnimation(lplr.Character, bedwars.AnimationType.MINER_MINE_STONE)
+								end
+	
+								task.delay(Delay.Value, function()
+									if AutoMiner.Enabled and v.Parent then

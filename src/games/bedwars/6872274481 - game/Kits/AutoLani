@@ -1,0 +1,20 @@
+	local AutoLani
+	local Delay
+	local UseEnemy
+	local Enemy
+	local Player
+	
+	local Request = bedwars.Handler:Get('PaladinAbilityRequest')
+	
+	AutoLani = vape.Categories.Kits:CreateModule({
+		Name = 'AutoLani',
+		Function = function(call)
+			if call then
+				local oldstart
+	
+				repeat
+					local start = lplr:GetAttribute('PaladinStartTime')
+					if oldstart and oldstart ~= start then
+						local player = UseEnemy.Enabled and playersService:FindFirstChild(Enemy.Value) or not UseEnemy.Enabled and playersService:FindFirstChild(Player.Value) or nil
+						if player then
+							task.delay(Delay.Value, function()

@@ -1,0 +1,18 @@
+	local AutoBedDefense
+	local Repair
+	local Upgrade
+	local Range
+	local Reserve
+	
+	local holding, held
+	
+	AutoBedDefense = vape.Categories.World:CreateModule({
+		Name = 'AutoBedDefense',
+		Function = function(callback)
+			if callback then
+				holding, held = nil, false
+	
+				AutoBedDefense:Clean(proximityPromptService.PromptButtonHoldBegan:Connect(function(prompt)
+					if prompt == holding then
+						held = true
+					end

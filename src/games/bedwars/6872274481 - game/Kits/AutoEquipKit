@@ -1,0 +1,5 @@
+	local AutoEquipKit
+	local Kit
+	
+	local kits, list = {}, {}
+	

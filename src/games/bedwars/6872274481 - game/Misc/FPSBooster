@@ -1,0 +1,77 @@
+	local FPSBooster
+	local Cosmetics
+	local Animations
+	local Clouds
+	local Quality
+	local Shadows
+	local Post
+	local Water
+	local Kill
+	local Visualizer
+	local Particles
+	local Nametags
+	local Compatibility
+	local hidden = {}
+	local watching = setmetatable({}, {__mode = 'k'})
+	local effects = {}
+	local killeffects, visualizers, particlesold = {}, {}, {}
+	local waterold
+	local qualityold
+	local shadowsold
+	local technologyold
+	local nametagold
+	local posthook
+	local particlehook
+	local particleclasses = {'ParticleEmitter', 'Trail', 'Beam', 'Smoke', 'Fire', 'Sparkles'}
+	
+	local function silenceParticle(obj)
+		if not table.find(particleclasses, obj.ClassName) or particlesold[obj] ~= nil then return end
+		particlesold[obj] = obj.Enabled
+		obj.Enabled = false
+	end
+	
+	local function stripEffect(effect)
+		if effects[effect] ~= nil then return end
+		for _, v in vape.BlurEffects or {} do
+			if v == effect then return end
+		end
+	
+		if effect:IsA('PostEffect') then
+			effects[effect] = effect.Enabled
+			effect.Enabled = false
+		elseif effect:IsA('Atmosphere') then
+			effects[effect] = effect.Density
+			effect.Density = 0
+		end
+	end
+	
+	local function setSpeed(speed)
+		for _, v in entitylib.List do
+			if v.Player ~= lplr then
+				local humanoid = v.Character:FindFirstChildWhichIsA('Humanoid')
+				local animator = humanoid and humanoid:FindFirstChildWhichIsA('Animator')
+				for _, v2 in animator and animator:GetPlayingAnimationTracks() or {} do
+					v2:AdjustSpeed(speed)
+				end
+			end
+		end
+	end
+	
+	local function Added(ent)
+		if not Cosmetics.Enabled or ent.Player == lplr then return end
+	
+		for _, v in ent.Character:GetChildren() do
+			if v.Name == 'Clothing' or v.Name == '3DClothing' then
+				hidden[v] = v.Parent
+				v.Parent = nil
+			end
+		end
+	
+		if not watching[ent.Character] then
+			watching[ent.Character] = ent.Character.ChildAdded:Connect(function(obj)
+				if FPSBooster.Enabled and Cosmetics.Enabled and (obj.Name == 'Clothing' or obj.Name == '3DClothing') then
+					task.defer(function()
+						if FPSBooster.Enabled and Cosmetics.Enabled and obj.Parent == ent.Character then
+							hidden[obj] = ent.Character
+							obj.Parent = nil
+						end

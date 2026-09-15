@@ -1,0 +1,160 @@
+	local AutoZeno
+	local Targets
+	local TargetMode
+	local Limit
+	local AFKCheck
+	local AutoShockWave
+	local ShockwaveRange
+	local UseStrike
+	local UseStorm
+	local Range
+	local Delay
+	
+	local function getAttackData()
+		if Limit.Enabled then
+			local tool = store.hand.tool
+			local itemType = tool and tool.Name
+			if itemType and bedwars.WizardUtil:isWizardStaff(itemType) then
+				return tool, itemType
+			end
+			return nil
+		end
+	
+		for _, v in store.inventory.inventory.items do
+			if bedwars.WizardUtil:isWizardStaff(v.itemType) and v.tool then
+				switchItem(v.tool, 0)
+				return v.tool, v.itemType
+			end
+		end
+	
+		return nil
+	end
+	
+	AutoZeno = vape.Categories.Kits:CreateModule({
+		Name = 'AutoZeno',
+		Function = function(callback)
+			if callback then
+				local attempts = {}
+				repeat
+					if entitylib.isAlive and not (AFKCheck.Enabled and isAfk()) then
+						local staff, itemType = getAttackData()
+						if staff and itemType then
+							local localPosition = entitylib.character.RootPart.Position
+							local castRange = math.min(Range.Value, bedwars.WizardUtil:getCastRange(itemType))
+							local shockwave = AutoShockWave.Enabled and bedwars.WizardUtil:hasAbility(itemType, 'SHOCKWAVE')
+							local ent = entitylib.EntityPosition({
+								Origin = localPosition,
+								Range = math.max(castRange, shockwave and ShockwaveRange.Value or 0),
+								Part = 'RootPart',
+								Players = Targets.Players.Enabled,
+								NPCs = Targets.NPCs.Enabled,
+								Priority = Targets.Priority.Value,
+								Sort = sortmethods[TargetMode.Value]
+							})
+	
+							if ent then
+								local distance = (localPosition - ent.RootPart.Position).Magnitude
+								local target = ent.RootPart.Position + ((ent.Humanoid.MoveDirection or Vector3.zero) * (1 + lplr:GetNetworkPing()))
+								local abilities = {
+									{'LIGHTNING_STORM', UseStorm.Enabled and distance <= castRange},
+									{'SHOCKWAVE', shockwave and distance <= ShockwaveRange.Value},
+									{'LIGHTNING_STRIKE', UseStrike.Enabled and distance <= castRange}
+								}
+	
+								for _, v in abilities do
+									if not v[2] or (attempts[v[1]] or 0) > tick() then continue end
+									if not bedwars.WizardUtil:hasAbility(itemType, v[1]) then continue end
+	
+									local controller = bedwars.WizardStaffController
+									if not controller then continue end
+	
+									local suc, allowed = pcall(controller.canCastAbility, controller, v[1])
+									if not suc or not allowed then continue end
+									suc, allowed = pcall(bedwars.AbilityController.canUseAbility, bedwars.AbilityController, v[1], {disableBlockedAbilityAlert = true})
+									if not suc or not allowed then continue end
+	
+									attempts[v[1]] = tick() + math.max(Delay.Value, 0.25)
+									if pcall(bedwars.AbilityController.useAbility, bedwars.AbilityController, v[1], newproxy(true), {target = v[1] == 'SHOCKWAVE' and Vector3.zero or target}) then
+										task.wait(Delay.Value)
+										break
+									end
+								end
+							end
+						end
+					end
+					task.wait(0.1)
+				until not AutoZeno.Enabled
+			end
+		end,
+		Tooltip = 'Automatically uses zeno\'s staff.'
+	})
+	
+	Targets = AutoZeno:CreateTargets({
+		Players = true,
+		NPCs = false
+	})
+	local methods = {'Damage', 'Distance'}
+	for _, v in sortlist do
+		if not table.find(methods, v) then
+			table.insert(methods, v)
+		end
+	end
+	TargetMode = AutoZeno:CreateDropdown({
+		Name = 'Target Mode',
+		List = methods,
+		Default = 'Distance'
+	})
+	Limit = AutoZeno:CreateToggle({
+		Name = 'Limit to item',
+		Default = true
+	})
+	AFKCheck = AutoZeno:CreateToggle({
+		Name = 'AFK check',
+		Tooltip = 'Stops casting once you have not touched your mouse or keyboard for 30 seconds'
+	})
+	UseStrike = AutoZeno:CreateToggle({
+		Name = 'Use Lightning Strike',
+		Default = true
+	})
+	UseStorm = AutoZeno:CreateToggle({Name = 'Use Lightning Storm'})
+	AutoShockWave = AutoZeno:CreateToggle({
+		Name = 'Auto Shockwave',
+		Function = function(callback)
+			if ShockwaveRange then
+				ShockwaveRange.Object.Visible = callback
+			end
+		end,
+		Tooltip = 'Automatically uses the shockwave ability when a target is near'
+	})
+	ShockwaveRange = AutoZeno:CreateSlider({
+		Name = 'Shockwave Range',
+		Min = 1,
+		Max = 12,
+		Decimal = 5,
+		Default = 12,
+		Darker = true,
+		Visible = false,
+		Suffix = function(val)
+			return val > 1 and 'studs' or 'stud'
+		end
+	})
+	Range = AutoZeno:CreateSlider({
+		Name = 'Range',
+		Min = 1,
+		Max = 60,
+		Decimal = 5,
+		Default = 35,
+		Suffix = function(val)
+			return val > 1 and 'studs' or 'stud'
+		end
+	})
+	Delay = AutoZeno:CreateSlider({
+		Name = 'Delay',
+		Min = 0,
+		Max = 10,
+		Decimal = 5,
+		Default = 0.5,
+		Suffix = function(val)
+			return val > 1 and 'secs' or 'sec'
+		end
+	})

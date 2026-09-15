@@ -1,0 +1,52 @@
+	local old
+	local Image
+	local foundids
+	
+	local Crosshair = vape.Legit:CreateModule({
+		Name = 'Crosshair',
+		Category = 'Game',
+		Icon = getvapeasset('catsix/assets/new/legit_crosshair.png'),
+		Function = function(callback)
+			if callback then
+				if not foundids then
+					foundids = {}
+					for i, v in debug.getconstants(bedwars.ViewmodelController.showCrosshair) do
+						if tostring(v):find('rbxassetid://') then
+							table.insert(foundids, i)
+						end
+					end
+	
+					if #foundids == 0 then
+						foundids = nil
+						return warn('[catvape] Crosshair failed to get constants')
+					end
+				end
+	
+				old = debug.getconstant(bedwars.ViewmodelController.showCrosshair, foundids[1])
+				for _, v in foundids do
+					debug.setconstant(bedwars.ViewmodelController.showCrosshair, v, Image.Value)
+				end
+			elseif foundids then
+				for _, v in foundids do
+					debug.setconstant(bedwars.ViewmodelController.showCrosshair, v, old)
+				end
+			end
+	
+			if bedwars.ViewmodelController.crosshair then
+				bedwars.ViewmodelController:hideCrosshair()
+				bedwars.ViewmodelController:showCrosshair()
+			end
+		end,
+		Tooltip = 'Custom first person crosshair depending on the image choosen.'
+	})
+	
+	Image = Crosshair:CreateTextBox({
+		Name = 'Image',
+		Placeholder = 'image id (roblox)',
+		Function = function(enter)
+			if enter and Crosshair.Enabled then
+				Crosshair:Toggle()
+				Crosshair:Toggle()
+			end
+		end
+	})

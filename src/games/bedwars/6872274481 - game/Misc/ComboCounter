@@ -1,0 +1,30 @@
+	local ComboCounter
+	local ComboComparator
+	local DamageComparator
+	local combo, comparator = 0, 0
+	local dealt, dealthits, taken, takenhits = 0, 0, 0, 0
+	
+	ComboCounter = targetinfo:CreateStat({
+		Name = 'Combo Counter',
+		Icon = getvapeasset('catsix/assets/new/combo_display.png'),
+		IconSize = UDim2.fromOffset(14, 12),
+		Default = true,
+		Tooltip = 'Shows how many hits in a direct row you have landed on, or taken from, the target.'
+	})
+	ComboComparator = targetinfo:CreateStat({
+		Name = 'Combo Comparator',
+		Icon = getvapeasset('catsix/assets/new/sword_header.png'),
+		IconSize = UDim2.fromOffset(12, 12),
+		Signed = true,
+		Tooltip = 'Measures how many hits you have landed compared to the target.'
+	})
+	DamageComparator = targetinfo:CreateStat({
+		Name = 'Damage Comparator',
+		Default = true,
+		Signed = true,
+		Tint = true,
+		Tooltip = 'Measures the strength of the target compared to yourself, from the damage each of you lands per hit.'
+	})
+	vape:Clean(targetinfo.TargetChanged:Connect(function()
+		combo, comparator = 0, 0
+		dealt, dealthits, taken, takenhits = 0, 0, 0, 0

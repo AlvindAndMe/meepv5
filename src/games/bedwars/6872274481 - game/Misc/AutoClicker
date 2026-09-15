@@ -1,0 +1,39 @@
+	local AutoClicker
+	local CPS
+	local Place
+	local Wool
+	local BlockCPS = {}
+	local Thread
+	
+	local function AutoClick()
+		if Thread then
+			task.cancel(Thread)
+		end
+	
+		Thread = task.delay(store.hand.toolType == 'block' and math.max(1 / BlockCPS:GetRandomValue(), 1 / (bedwars.SharedConstants.BLOCK_PLACE_CPS or 12)) or 1 / CPS:GetRandomValue(), function()
+			repeat
+				if not bedwars.AppController:isLayerOpen(bedwars.UILayers.MAIN) then
+					local blockPlacer = bedwars.BlockPlacementController.blockPlacer
+					if store.hand.toolType == 'block' and Place.Enabled and (Wool.Enabled and store.hand.tool.Name:find('wool_') or not Wool.Enabled) and blockPlacer and canPlace() then
+						if (workspace:GetServerTimeNow() - bedwars.BlockCpsController.lastPlaceTimestamp) >= ((1 / (bedwars.SharedConstants.BLOCK_PLACE_CPS or 12)) * 0.5) then
+							if inputService.TouchEnabled then
+								task.spawn(blockPlacer.autoBridge, blockPlacer, workspace:GetServerTimeNow() - bedwars.KnockbackController:getLastKnockbackTime() >= 0.2)
+							else
+								local selector = blockPlacer.clientManager:getBlockSelector()
+								local mouseinfo = selector and selector:getMouseInfo(0)
+								if mouseinfo and mouseinfo.placementPosition == mouseinfo.placementPosition then
+									task.spawn(blockPlacer.placeBlock, blockPlacer, mouseinfo.placementPosition, mouseinfo)
+								end
+							end
+						end
+					elseif store.hand.toolType == 'sword' then
+						if inputService.TouchEnabled then
+							bedwars.SwordController:mobileSwingPressed()
+						elseif canSwing() and not bedwars.SwordController.disableSwingState then
+							bedwars.SwordController:swingSwordAtMouse(0.39)
+						end
+					end
+				end
+	
+				task.wait(store.hand.toolType == 'block' and math.max(1 / BlockCPS:GetRandomValue(), 1 / (bedwars.SharedConstants.BLOCK_PLACE_CPS or 12)) or 1 / CPS:GetRandomValue())
+			until not AutoClicker.Enabled

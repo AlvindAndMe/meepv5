@@ -1,0 +1,9 @@
+	local AutoHonor
+	local Delay
+	
+	local Honored = {}
+	local function honor()
+		if #Honored > 1 then return end
+		local list, team = table.clone(entitylib.List), lplr:GetAttribute('Team')
+		table.sort(list, function(a, b)
+			return a.Player:GetAttribute('Team') == team and b.Player:GetAttribute('Team') ~= team

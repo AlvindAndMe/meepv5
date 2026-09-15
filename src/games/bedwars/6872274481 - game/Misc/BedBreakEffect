@@ -1,0 +1,18 @@
+	local BedBreakEffect
+	local List
+	local NameToId = {}
+	
+	BedBreakEffect = vape.Legit:CreateModule({
+		Name = 'Bed Break Effect',
+		Category = 'Game',
+		Icon = getvapeasset('catsix/assets/new/legit_bedbreakeffect.png'),
+		Function = function(callback)
+			if callback then
+				BedBreakEffect:Clean(vapeEvents.BedwarsBedBreak.Event:Connect(function(data)
+					firesignal(bedwars.Handler:Get('BedBreakEffectTriggered').Remote.instance.OnClientEvent, {
+						player = data.player,
+						position = data.bedBlockPosition * 3,
+						effectType = NameToId[List.Value],
+						teamId = data.brokenBedTeam.id,
+						centerBedPosition = data.bedBlockPosition * 3
+					})

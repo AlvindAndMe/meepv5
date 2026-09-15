@@ -1,0 +1,62 @@
+	local AutoCyber
+	local Mode
+	local Whitelist
+	local Visual
+	local Steal
+	local Target
+	local Limit
+	
+	local teamCache, cacheExpire = nil, 0
+	local function getTeamGenerator()
+		if cacheExpire > tick() and teamCache and teamCache.Parent then
+			return teamCache
+		end
+		teamCache, cacheExpire = collectionService:GetTagged(lplr:GetAttribute('Team').. '_TeamOreGenerator')[1], tick() + 5
+		return teamCache
+	end
+	local cache = nil
+	local watching = setmetatable({}, {__mode = 'k'})
+	local function getDrone()
+		if Limit.Enabled and (not store.hand.tool or store.hand.tool.Name ~= 'drone') then
+			return nil
+		end
+		if cache and cache.Parent then
+			return cache
+		end
+		for _, v in collectionService:GetTagged('Drone') do
+			if v:GetAttribute('PlayerUserId') == lplr.UserId then
+				local function Changed()
+					if v:GetAttribute('HeldItem') then
+						repeat
+							bedwars.Handler:Get('DropDroneItem'):Fire('SendToServer', {
+								direction = Vector3.new(1000, 10, 0),
+								position = v.PrimaryPart.Position
+							})
+							task.wait(0.1)
+						until not v:GetAttribute('HeldItem') or not AutoCyber.Enabled
+					end
+				end
+				if not watching[v] then
+					watching[v] = {
+						v:GetAttributeChangedSignal('HeldItem'):Connect(Changed),
+						v:GetAttributeChangedSignal('HeldItemAmount'):Connect(Changed)
+					}
+				end
+				cache = v
+				return v
+			end
+		end
+		if getItem('drone') and bedwars.Handler:Get('FireGuidedProjectile'):Fire('CallServer', 'drone') then
+			task.wait(0.1)
+			return getDrone()
+		end
+		return nil
+	end
+	local blacklist = {}
+	local function getItemDrop(drone)
+		local generator = getTeamGenerator()
+		generator = generator and generator.PrimaryPart.Position or Vector3.zero
+		local children = workspace.ItemDrops:GetChildren()
+		local pos = drone.PrimaryPart.Position
+		table.sort(children, function(a, b)
+			return (pos - a.Position).Magnitude < (pos - b.Position).Magnitude

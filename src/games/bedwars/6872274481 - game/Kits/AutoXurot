@@ -1,0 +1,29 @@
+	local AutoXurot
+	local Range
+	local Delay
+	local dragonForm = false
+	local nextBreath = 0
+	
+	local Breath = bedwars.Handler:Get('DragonBreath')
+	
+	local function isLocal(data)
+		if type(data) ~= 'table' then return true end
+		return data.player == nil or data.player == lplr
+	end
+	
+	AutoXurot = vape.Categories.Kits:CreateModule({
+		Name = 'AutoXurot',
+		Function = function(callback)
+			if callback then
+				dragonForm, nextBreath = false, 0
+	
+				local action = bedwars.Handler:Get('VoidDragonAction')
+				if action.Remote then
+					AutoXurot:Clean(action.Remote:Connect(function(data)
+						if isLocal(data) then
+							if data.action == 'transform' then
+								dragonForm = true
+							elseif data.action == 'dragon_deactive' then
+								dragonForm = false
+							end
+						end

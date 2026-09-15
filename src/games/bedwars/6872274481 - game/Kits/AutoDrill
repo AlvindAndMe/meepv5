@@ -1,0 +1,145 @@
+	local AutoDrill
+	local AutoCollect
+	local Notify
+	local AutoAttack
+	local Legit
+	local Range
+	local AttackDelay
+	local CollectDelay
+	local Targets
+	local Sort
+	local currentDrill
+	local attackDebounce = {}
+	local collectDebounce = {}
+	
+	local function addDrill(drills, added, drill)
+		if typeof(drill) ~= 'Instance' or added[drill] or drill:GetAttribute('PlacedByUserId') ~= lplr.UserId then
+			return
+		end
+		if (drill and (drill.PrimaryPart or drill:FindFirstChild('RootPart') or drill:FindFirstChildWhichIsA('BasePart'))) then
+			added[drill] = true
+			table.insert(drills, drill)
+		end
+	end
+	
+	local function getDrills(tagged)
+		local drills, added = {}, {}
+		for _, v in tagged do
+			addDrill(drills, added, v)
+		end
+	
+		for _, v in (bedwars.DrillTabletController and bedwars.DrillTabletController.drillList or {}) do
+			addDrill(drills, added, v)
+		end
+	
+		return drills
+	end
+	
+	local function updateAttackControls()
+		if Legit then
+			local enabled = AutoAttack.Enabled
+			Legit.Object.Visible = enabled
+			Range.Object.Visible = enabled and not Legit.Enabled
+			AttackDelay.Object.Visible = enabled
+			Targets.Object.Visible = enabled
+			Sort.Object.Visible = enabled
+		end
+	end
+	
+	AutoDrill = vape.Categories.Kits:CreateModule({
+		Name = 'AutoDrill',
+		Function = function(callback)
+			if callback then
+				local tagged = collection('Drill', AutoDrill)
+				repeat
+					task.wait()
+				until store.matchState ~= 0 and store.equippedKit == 'drill' or not AutoDrill.Enabled
+	
+				repeat
+					if entitylib.isAlive and store.equippedKit == 'drill' then
+						local now = tick()
+									attackDebounce[v] = now + AttackDelay.Value
+								end
+							end
+						end
+					end
+					task.wait(0.1)
+				until not AutoDrill.Enabled
+			else
+				currentDrill = nil
+				table.clear(attackDebounce)
+				table.clear(collectDebounce)
+			end
+		end,
+		Tooltip = 'Automatically collects resources and attacks with placed drills.'
+	})
+	
+	AutoCollect = AutoDrill:CreateToggle({
+		Name = 'Auto collect',
+		Function = function(callback)
+			if Notify then
+				Notify.Object.Visible = callback
+				CollectDelay.Object.Visible = callback
+			end
+		end,
+		Default = true
+	})
+	Notify = AutoDrill:CreateToggle({
+		Name = 'Notify on collect',
+		Darker = true
+	})
+	AutoAttack = AutoDrill:CreateToggle({
+		Name = 'Auto attack',
+		Function = updateAttackControls,
+		Default = true
+	})
+	Range = AutoDrill:CreateSlider({
+		Name = 'Range',
+		Min = 1,
+		Max = 10,
+		Default = 10,
+		Suffix = function(value)
+			return value == 1 and 'stud' or 'studs'
+		end
+	})
+	Legit = AutoDrill:CreateToggle({
+		Name = 'Legit Range',
+		Function = updateAttackControls,
+		Default = true
+	})
+	AttackDelay = AutoDrill:CreateSlider({
+		Name = 'Attack delay',
+		Min = 0.1,
+		Max = 1,
+		Default = 0.3,
+		Decimal = 100,
+		Suffix = function(value)
+			return value == 1 and 'sec' or 'secs'
+		end
+	})
+	CollectDelay = AutoDrill:CreateSlider({
+		Name = 'Collect delay',
+		Min = 0.1,
+		Max = 3,
+		Default = 0.5,
+		Decimal = 10,
+		Suffix = function(value)
+			return value == 1 and 'sec' or 'secs'
+		end
+	})
+	Targets = AutoDrill:CreateTargets({
+		Players = true,
+		NPCs = false
+	})
+	local methods = {'Distance', 'Health', 'Damage'}
+	for i in sortmethods do
+		if not table.find(methods, i) then
+			table.insert(methods, i)
+		end
+	end
+	Sort = AutoDrill:CreateDropdown({
+		Name = 'Sort',
+		List = methods,
+		Default = 'Distance'
+	})
+	updateAttackControls()

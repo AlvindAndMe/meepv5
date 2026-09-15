@@ -1,0 +1,236 @@
+	local ChargeAura
+	local Targets
+	local Mode
+	local TargetPart
+	local Hitreg
+	local Range
+	local Charge
+	local Swap
+	local Animation
+	
+	local AttackRemote = {Fire = function() end}
+	local nextAttack = 0
+	local nextSwap = 0
+	
+	local function getCharged(tool)
+		local itemmeta = tool and bedwars.ItemMeta[tool.Name]
+		local swordmeta = itemmeta and itemmeta.sword
+		return swordmeta and swordmeta.chargedAttack or nil
+	end
+	
+	local function getChargedWeapon()
+		local best, bestdamage = nil, -1
+		for _, v in store.inventory.inventory.items do
+			local itemmeta = bedwars.ItemMeta[v.itemType]
+			local swordmeta = itemmeta and itemmeta.sword
+			if swordmeta and swordmeta.chargedAttack then
+				local damage = (swordmeta.damage or 0) + (swordmeta.chargedAttack.bonusDamage or 0)
+				if damage > bestdamage then
+					best, bestdamage = v, damage
+				end
+			end
+		end
+		return best
+	end
+	
+	local function getChargeTime(charged)
+		local min = charged.minChargeTimeSec or 0
+		local max = math.max(charged.maxChargeTimeSec or min, min)
+		return min + ((max - min) * (Charge.Value / 100))
+	end
+	
+	local function getCooldown(tool, charged)
+		return charged.attackCooldown or getSwordSpeed(tool)
+	end
+	
+	local function releaseCharge(tool, charged)
+		local started = bedwars.SwordChargeController:getChargeStartTime()
+		local chargeTime = started > 0 and (tick() - started) or getChargeTime(charged)
+		bedwars.SwordChargeController:stopCharging(tool.Name)
+	
+		if not (charged.skipSwingDamage and chargeTime > (charged.minChargeTimeSec or 0)) then
+			bedwars.SwordController:swingSwordAtMouse(chargeTime)
+		end
+	
+		bedwars.SyncEvents.SwordChargedSwing:fire(lplr, tool, {chargeTime = chargeTime})
+		return chargeTime
+	end
+	
+	local function attack(entity, tool, charged, chargeTime)
+		local selfpos = entitylib.character.RootPart.Position
+		local targetpos = getTargetPart(entity, TargetPart.Value).Position
+		local delta = targetpos - selfpos
+		local dir = delta.Magnitude > 0.001 and delta.Unit or Vector3.new(0, -1, 0)
+		local reach = getReach(tool) or 0
+		local pos = selfpos + dir * math.max(delta.Magnitude - (reach - 0.001), 0)
+		local ratio = 1
+	
+		if charged.maxChargeTimeSec and charged.maxChargeTimeSec > 0 then
+			ratio = math.clamp(chargeTime / charged.maxChargeTimeSec, 0, 1)
+		end
+	
+		bedwars.SwordController.lastAttack = workspace:GetServerTimeNow()
+		store.attackReach = (delta.Magnitude * 100) // 1 / 100
+		store.attackReachUpdate = tick() + 1
+	
+		AttackRemote:Fire(nil, {
+			weapon = tool,
+			chargedAttack = {chargeRatio = ratio},
+			entityInstance = entity.Character,
+			validate = {
+				raycast = {
+					cameraPosition = {value = pos},
+					cursorDirection = {value = dir}
+				},
+				targetPosition = {value = targetpos},
+				selfPosition = {value = pos}
+			}
+		})
+	end
+	
+	ChargeAura = vape.Categories.Combat:CreateModule({
+		Name = 'ChargeAura',
+		Function = function(callback)
+			if callback then
+				AttackRemote = bedwars.Handler:Get('SwordHit')
+				nextAttack = 0
+				nextSwap = 0
+	
+				repeat
+					if entitylib.isAlive and not isCasting() and not bedwars.SwordController:getSwordSwingDisabled() then
+						local tool = store.hand.tool
+						local charged = getCharged(tool)
+						local weapon = (not charged and Swap.Enabled) and getChargedWeapon() or nil
+						local reachTool = charged and tool or (weapon and weapon.tool)
+	
+						if reachTool then
+							local target = entitylib.EntityPosition({
+								Range = Range.Value + (getReach(reachTool) or 0),
+								Part = 'RootPart',
+								Players = Targets.Players.Enabled,
+								NPCs = Targets.NPCs.Enabled,
+								Priority = Targets.Priority.Value,
+								Wallcheck = Targets.Walls.Enabled,
+								Sort = sortmethods[Mode.Value]
+							})
+	
+							if target and weapon and tick() >= nextSwap then
+								local hotbar = getHotbar(weapon.tool)
+								if hotbar then
+									hotbarSwitch(hotbar)
+								end
+								switchItem(weapon.tool)
+								nextSwap = tick() + 0.3
+								tool = store.hand.tool
+								charged = getCharged(tool)
+							end
+	
+							if charged and target then
+								store.attacking = true
+	
+								if tick() >= nextAttack then
+									local chargeTime = getChargeTime(charged)
+	
+									if Hitreg.Value == 'Charge' then
+										if bedwars.SwordChargeController:getChargeState() == bedwars.ChargeState.Idle then
+											bedwars.SwordChargeController:startCharging(tool.Name)
+										end
+	
+										local started = bedwars.SwordChargeController:getChargeStartTime()
+										if started > 0 and (tick() - started) >= chargeTime then
+											chargeTime = releaseCharge(tool, charged)
+											attack(target, tool, charged, chargeTime)
+											nextAttack = tick() + getCooldown(tool, charged)
+										end
+									else
+										if Animation.Enabled then
+											bedwars.GameAnimationUtil:playAnimation(lplr.Character, bedwars.AnimationType.PUNCH)
+										end
+										attack(target, tool, charged, chargeTime)
+										nextAttack = tick() + getCooldown(tool, charged)
+									end
+								end
+							elseif charged then
+								store.attacking = false
+								if bedwars.SwordChargeController:getChargeState() ~= bedwars.ChargeState.Idle then
+									bedwars.SwordChargeController:stopCharging(tool.Name)
+								end
+							end
+						end
+					end
+					task.wait()
+				until not ChargeAura.Enabled
+	
+				store.attacking = false
+				local tool = store.hand.tool
+				if tool and bedwars.SwordChargeController:getChargeState() ~= bedwars.ChargeState.Idle then
+					bedwars.SwordChargeController:stopCharging(tool.Name)
+				end
+			end
+		end,
+		Tooltip = 'Aura for charged weapons like great hammers and scythes, which the normal aura ignores entirely'
+	})
+	
+	Targets = ChargeAura:CreateTargets({
+		Players = true,
+		NPCs = true,
+		Walls = true
+	})
+	local methods = {'Distance', 'Health'}
+	for _, v in sortlist do
+		if not table.find(methods, v) then
+			table.insert(methods, v)
+		end
+	end
+	Mode = ChargeAura:CreateDropdown({
+		Name = 'Target mode',
+		List = methods,
+		Default = 'Distance'
+	})
+	TargetPart = ChargeAura:CreateDropdown({
+		Name = 'Target part',
+		List = partlist,
+		Default = 'RootPart'
+	})
+	Hitreg = ChargeAura:CreateDropdown({
+		Name = 'Hitreg',
+		List = {'Instant', 'Charge'},
+		Default = 'Instant',
+		Function = function(val)
+			if Charge then
+				Charge.Object.Visible = val == 'Charge'
+			end
+		end,
+		Tooltip = 'Instant - swings on the weapon cooldown for base damage\nCharge - winds the weapon up first, half as many swings but double the damage each, and its slam or wave still goes off'
+	})
+	Range = ChargeAura:CreateSlider({
+		Name = 'Range',
+		Min = 0,
+		Max = 20,
+		Default = 3,
+		Decimal = 10,
+		Suffix = function(val)
+			return val <= 1 and 'stud' or 'studs'
+		end,
+		Tooltip = 'Added on top of the weapons own attack range'
+	})
+	Charge = ChargeAura:CreateSlider({
+		Name = 'Charge',
+		Min = 0,
+		Max = 100,
+		Default = 100,
+		Suffix = '%',
+		Visible = false,
+		Tooltip = 'How far between the weapons minimum and maximum charge to wind up before releasing'
+	})
+	Swap = ChargeAura:CreateToggle({
+		Name = 'Auto swap',
+		Default = true,
+		Tooltip = 'Holds your strongest charged weapon once something walks into range'
+	})
+	Animation = ChargeAura:CreateToggle({
+		Name = 'Animation',
+		Default = true,
+		Tooltip = 'Plays a swing on every instant hit'
+	})
+	

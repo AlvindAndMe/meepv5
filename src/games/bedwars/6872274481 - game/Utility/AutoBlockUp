@@ -1,0 +1,34 @@
+	local AutoBlockUp
+	local LimitItem
+	local lastPlace = 0
+	local up = false
+	
+	AutoBlockUp = vape.Categories.Utility:CreateModule({
+		Name = 'AutoBlockUp',
+		Function = function(callback)
+			if callback then
+				AutoBlockUp:Clean(runService.Heartbeat:Connect(function()
+					if entitylib.isAlive and up then
+						local item
+						if store.hand.toolType == 'block' and (store.hand.amount or 0) > 0 then
+							item = store.hand.tool and store.hand.tool.Name
+						elseif not LimitItem.Enabled then
+							for _, v in store.inventory.inventory.items do
+								local meta = bedwars.ItemMeta[v.itemType]
+								if meta and meta.block and (v.amount or 0) > 0 then
+									item = v.itemType
+									break
+								end
+							end
+						end
+	
+						if item then
+							local pos = roundPos(entitylib.character.RootPart.Position - Vector3.new(0, entitylib.character.HipHeight + 1.5, 0))
+							if tick() >= lastPlace and not getPlacedBlock(pos) then
+								lastPlace = tick() + 0.15
+								bedwars.placeBlock(pos, item, false)
+							end
+	
+							entitylib.character.RootPart.AssemblyLinearVelocity = Vector3.new(entitylib.character.RootPart.AssemblyLinearVelocity.X, 35, entitylib.character.RootPart.AssemblyLinearVelocity.Z)
+						end
+					end

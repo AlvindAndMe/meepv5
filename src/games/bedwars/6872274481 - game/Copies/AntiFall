@@ -1,0 +1,82 @@
+	local AntiFall
+	local Mode
+	local Material
+	local Color
+	local connection
+	local rayCheck = RaycastParams.new()
+	rayCheck.RespectCanCollide = true
+
+	AntiFall = vape.Categories.Blatant:CreateModule({
+		Name = 'AntiFall',
+		Function = function(callback)
+			if callback then
+				repeat task.wait() until store.matchState ~= 0 or not AntiFall.Enabled
+				if not AntiFall.Enabled then return end
+
+				local lowground, debounce = math.huge, tick()
+				for _, v in bedwars.BlockController:getStore():getAllBlockPositions() do
+					v = v * 3
+					if v.Y < lowground and not getPlacedBlock(v + Vector3.new(0, 3, 0)) then
+						lowground = v.Y
+					end
+				end
+				if lowground == math.huge then return end
+
+				AntiFallPart = Instance.new('Part')
+				AntiFallPart.Size = Vector3.new(10000, 1, 10000)
+				AntiFallPart.Transparency = 1 - Color.Opacity
+				AntiFallPart.Material = Enum.Material[Material.Value]
+				AntiFallPart.Color = Color3.fromHSV(Color.Hue, Color.Sat, Color.Value)
+				AntiFallPart.Position = Vector3.new(0, lowground - 2, 0)
+				AntiFallPart.CanCollide = Mode.Value == 'Collide'
+				AntiFallPart.Anchored = true
+				AntiFallPart.CanQuery = false
+				AntiFallPart.Parent = workspace
+				AntiFall:Clean(AntiFallPart)
+				AntiFall:Clean(AntiFallPart.Touched:Connect(function(touched)
+					if touched.Parent ~= lplr.Character or not entitylib.isAlive or debounce >= tick() then return end
+					debounce = tick() + 0.1
+
+					if Mode.Value == 'Normal' then
+						local top = getNearGround()
+						if not top then return end
+
+						local lastTeleport = lplr:GetAttribute('LastTeleported')
+						rayCheck.FilterDescendantsInstances = {gameCamera, lplr.Character}
+						rayCheck.CollisionGroup = entitylib.character.RootPart.CollisionGroup
+						if connection then
+							connection:Disconnect()
+						end
+						connection = runService.PreSimulation:Connect(function()
+							if vape.Modules.Fly.Enabled or vape.Modules.LongJump.Enabled or not entitylib.isAlive or lplr:GetAttribute('LastTeleported') ~= lastTeleport then
+								connection:Disconnect()
+								AntiFallDirection = nil
+								return
+							end
+
+							local root = entitylib.character.RootPart
+							local delta = (top - root.Position) * Vector3.new(1, 0, 1)
+							AntiFallDirection = delta.Unit == delta.Unit and delta.Unit or Vector3.zero
+							root.AssemblyLinearVelocity *= Vector3.new(1, 0, 1)
+
+							local ray = workspace:Raycast(root.Position, AntiFallDirection, rayCheck)
+							if ray then
+								local dpos = roundPos(ray.Position + ray.Normal * 1.5) + Vector3.new(0, 3, 0)
+								for _ = 1, 10 do
+									if not getPlacedBlock(dpos) then
+										top = Vector3.new(top.X, dpos.Y, top.Z)
+										break
+									end
+									dpos += Vector3.new(0, 3, 0)
+								end
+							end
+
+							root.CFrame += Vector3.new(0, top.Y - root.Position.Y, 0)
+							if not frictionTable.Speed then
+								root.AssemblyLinearVelocity = (AntiFallDirection * getSpeed()) + Vector3.new(0, root.AssemblyLinearVelocity.Y, 0)
+							end
+
+							if delta.Magnitude < 1 then
+								connection:Disconnect()
+								AntiFallDirection = nil
+							end

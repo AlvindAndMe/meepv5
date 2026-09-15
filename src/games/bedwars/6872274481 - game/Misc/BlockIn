@@ -1,0 +1,98 @@
+	local BlockIn
+	local Mode
+	local Priority
+	local Return
+	local Switch
+	local Wool
+	local Blacklist
+	
+	local scan = 30
+	local dirs = {
+		Vector3.new(1, 0, 0),
+		Vector3.new(-1, 0, 0),
+		Vector3.new(0, 0, 1),
+		Vector3.new(0, 0, -1)
+	}
+	local priorities = {
+		['Lowest cost'] = function(a, b)
+			return a[2] < b[2]
+		end,
+		['Hardest'] = function(a, b)
+			return a[2] > b[2]
+		end
+	}
+	
+	local function getOrigin()
+		local pos = entitylib.character.RootPart.Position
+		local ray = entitylib.Raycast(pos, Vector3.new(0, -scan, 0), store.airRay)
+		return roundPos(ray and Vector3.new(pos.X, ray.Position.Y + 1.5, pos.Z) or pos)
+	end
+	
+	local function getBedNear()
+		local localPosition = entitylib.character.RootPart.Position
+		for _, v in collectionService:GetTagged('bed') do
+			if (localPosition - v.Position).Magnitude >= 14 or v:GetAttribute(`Team{lplr:GetAttribute('Team') or -1}NoBreak`) then continue end
+	
+			local handler = bedwars.BlockController:getHandlerRegistry():getHandler(v.Name)
+			local cells = handler and handler:getContainedPositions(v) or {v.Position / 3}
+			local occupied = {}
+			for _, v2 in cells do
+				occupied[v2 * 3] = true
+			end
+	
+			local defended = true
+			for _, v2 in cells do
+				for i2 = 1, #sides do
+					local pos = (v2 * 3) + sides[i2]
+					if not occupied[pos] and not getPlacedBlock(pos) then
+						defended = false
+						break
+					end
+				end
+				if not defended then break end
+			end
+	
+			if defended then
+				return v
+			end
+		end
+		return nil
+	end
+	
+	local function buildCol(getBlock, root, dir, height)
+		local out = {}
+		local col = root + dir * 3
+		local topY = root.Y + 2 * 3
+		local sup
+		local y = topY
+		while y >= (topY - scan) do
+			local pos = Vector3.new(col.X, y, col.Z)
+			if getBlock(Vector3.new(math.floor(pos.X / 3 + 0.5) * 3, math.floor(pos.Y / 3 + 0.5) * 3, math.floor(pos.Z / 3 + 0.5) * 3)) then
+				sup = y
+				break
+			end
+			y -= 3
+		end
+		local sy
+		if sup then
+			sy = sup + 3
+		else
+			sy = topY - (height - 1) * 3
+		end
+		local y = sy
+		while y <= topY do
+			table.insert(out, Vector3.new(dir.X * 3, y - root.Y, dir.Z * 3))
+			y += 3
+		end
+		return out
+	end
+	
+	local function getPattern(root, getBlock)
+		local pattern = {}
+		local cols = {}
+		for _, v in ipairs(dirs) do
+			local out = buildCol(getBlock, root, v, 2)
+			table.insert(cols, {v = v, out = out, cost = #out})
+		end
+		table.sort(cols, function(a, b)
+			return a.cost < b.cost

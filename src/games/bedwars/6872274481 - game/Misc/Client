@@ -1,0 +1,8 @@
+	local Client, OldGet, OldBreak, OldHit, OldWallcheck, OldSetBlock
+	local KnitInit, Knit
+	repeat
+		KnitInit, Knit = pcall(function()
+			if not canDebug then
+				return require(replicatedStorage['rbxts_include']['node_modules']['@easy-games'].knit.src).KnitClient
+			end
+			return debug.getupvalue(require(lplr.PlayerScripts.TS.knit).setup, 9)

@@ -1,0 +1,64 @@
+	local AutoFarmer
+	local Harvest
+	local Collect
+	local Range
+	local Delay
+	local nextAction = 0
+	
+	local drops = {
+		carrot = true,
+		carrot_seeds = true,
+		melon = true,
+		melon_seeds = true,
+		watermelon = true,
+		pumpkin = true,
+		pumpkin_block = true,
+		pumpkin_seeds = true
+	}
+	
+	local function harvestCrop(origin)
+		for _, v in collectionService:GetTagged('HarvestableCrop') do
+			local owner = v:GetAttribute('PlacedByUserId') or 0
+			local player = owner ~= 0 and playersService:GetPlayerByUserId(owner)
+			if v:IsA('BasePart') and (v.Position - origin).Magnitude <= Range.Value and (not player or player:GetAttribute('Team') == lplr:GetAttribute('Team')) then
+				bedwars.Handler:Get('CropHarvest'):Fire('CallServer', {
+					position = bedwars.BlockController:getBlockPosition(v.Position)
+				})
+				return true
+			end
+		end
+		return false
+	end
+	
+	local function collectDrop(origin)
+		for _, v in collectionService:GetTagged('ItemDrop') do
+			if drops[v.Name] and (v:GetAttribute('PickupReadyTime') or math.huge) < workspace:GetServerTimeNow() and (v.Position - origin).Magnitude <= Range.Value then
+				bedwars.Handler:Get('PickupItemDrop'):Fire('CallServerAsync', {itemDrop = v})
+				return true
+			end
+		end
+		return false
+	end
+	
+	AutoFarmer = vape.Categories.Kits:CreateModule({
+		Name = 'AutoFarmer',
+		Function = function(callback)
+			if callback then
+				nextAction = 0
+	
+				repeat
+					if entitylib.isAlive and store.equippedKit == 'farmer_cletus' and tick() >= nextAction then
+						local origin = entitylib.character.RootPart.Position
+						if (Harvest.Enabled and harvestCrop(origin)) or (Collect.Enabled and collectDrop(origin)) then
+							nextAction = tick() + Delay.Value
+						end
+					end
+					task.wait(0.1)
+				until not AutoFarmer.Enabled
+			end
+		Default = 0.15,
+		Decimal = 100,
+		Suffix = function(val)
+			return val <= 1 and 'sec' or 'secs'
+		end
+	})

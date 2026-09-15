@@ -1,0 +1,62 @@
+	local Viewmodel
+	local Depth
+	local Horizontal
+	local Vertical
+	local Size
+	local NoBob
+	local Visuals
+	local FillColor
+	local OutlineColor
+	local Rots = {}
+	local Highlights = {}
+	local old, oldc1
+	local rootjoint, rootc0, rootoffset
+	local rig
+	
+	local function highlightAccessory(accessory)
+		local handle = accessory:FindFirstChild('Handle')
+		if handle then
+			local highlight = Instance.new('Highlight')
+			highlight.Name = 'ViewmodelVisuals'
+			highlight.FillColor = Color3.fromHSV(FillColor.Hue, FillColor.Sat, FillColor.Value)
+			highlight.FillTransparency = FillColor.Opacity
+			highlight.OutlineColor = Color3.fromHSV(OutlineColor.Hue, OutlineColor.Sat, OutlineColor.Value)
+			highlight.OutlineTransparency = OutlineColor.Opacity
+			highlight.Parent = handle
+			Viewmodel:Clean(highlight)
+			table.insert(Highlights, highlight)
+		end
+	end
+	
+	local function startViewmodel()
+		local viewmodel
+		repeat
+			viewmodel = gameCamera:FindFirstChild('Viewmodel')
+			if viewmodel or not Viewmodel.Enabled then break end
+			task.wait(0.1)
+		until false
+		if not viewmodel or not Viewmodel.Enabled or rig == viewmodel then return end
+	
+		rig = viewmodel
+		viewmodel:ScaleTo(1)
+		oldc1 = viewmodel.RightHand.RightWrist.C1
+		viewmodel.RightHand.RightWrist.C1 = oldc1 * CFrame.Angles(math.rad(Rots[1].Value), math.rad(Rots[2].Value), math.rad(Rots[3].Value))
+		local lowertorso = viewmodel:FindFirstChild('LowerTorso')
+		local accessory = viewmodel:FindFirstChildWhichIsA('Accessory')
+		local reference = accessory and accessory:FindFirstChild('Handle') or viewmodel:FindFirstChild('RightHand')
+		rootjoint = lowertorso and lowertorso:FindFirstChildWhichIsA('Motor6D')
+		rootc0 = rootjoint and rootjoint.C0
+		rootoffset = reference and viewmodel.HumanoidRootPart.CFrame:PointToObjectSpace(reference.Position)
+		viewmodel:ScaleTo(Size.Value)
+		if rootjoint and rootc0 and rootoffset then
+			rootjoint.C0 = (rootc0 - rootc0.Position) + (rootc0.Position * Size.Value) + (rootoffset * (1 - Size.Value))
+		end
+	
+		Viewmodel:Clean(viewmodel.ChildAdded:Connect(function(v)
+			if v:IsA('Accessory') and Size.Value ~= 1 then
+				if store.matchState == 0 then
+					repeat task.wait() until store.matchState ~= 0
+					task.wait(0.5)
+				end
+				bedwars.scaleTool(v, Size.Value)
+			end

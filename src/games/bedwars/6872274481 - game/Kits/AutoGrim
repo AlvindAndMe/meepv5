@@ -1,0 +1,22 @@
+	local AutoGrim
+	local Range
+	local Health
+	local Delay
+	
+	local Legit = getFunctionRange(bedwars.GrimReaperController.registerSoulInteractions) or 0
+	
+	AutoGrim = vape.Categories.Kits:CreateModule({
+		Name = 'AutoGrim',
+		Function = function(callback)
+			if callback then
+				local souls = collection(bedwars.GrimReaperController.soulsByPosition, AutoGrim)
+		Tooltip = 'Only eats a soul once your health drops to this share of your maximum'
+	})
+	Delay = AutoGrim:CreateSlider({
+		Name = 'Delay',
+		Min = 0,
+		Max = 2,
+		Default = 0.1,
+		Decimal = 10,
+		Suffix = 'seconds'
+	})

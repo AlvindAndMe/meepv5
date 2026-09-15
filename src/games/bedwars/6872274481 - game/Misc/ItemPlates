@@ -1,0 +1,40 @@
+	local ItemPlates
+	local Whitelist
+	local Background
+	local Color = {}
+	local Reference = {}
+	local Folder = Instance.new('Folder')
+	Folder.Parent = vape.gui
+	
+	local function scanSide(self, start, tab)
+		for _, v in sides do
+			for i = 1, 15 do
+				local block = getPlacedBlock(start + (v * i))
+				if not block or block == self then break end
+				if not block:GetAttribute('NoBreak') and not table.find(tab, block.Name) then
+					table.insert(tab, block.Name)
+				end
+			end
+		end
+	end
+	
+	local function refreshAdornee(billboard)
+		local adornee = billboard.Adornee
+		if not adornee or not adornee.Parent then
+			billboard.Enabled = false
+			return
+		end
+	
+		for _, v in billboard.Frame:GetChildren() do
+			if v:IsA('ImageLabel') then
+				v:Destroy()
+			end
+		end
+	
+		local alreadygot = {}
+		scanSide(adornee, adornee.Position, alreadygot)
+		scanSide(adornee, adornee.Position + Vector3.new(0, 0, 3), alreadygot)
+		table.sort(alreadygot, function(a, b)
+			local first = bedwars.ItemMeta[a]
+			local second = bedwars.ItemMeta[b]
+			return (first and first.block and first.block.health or 0) > (second and second.block and second.block.health or 0)

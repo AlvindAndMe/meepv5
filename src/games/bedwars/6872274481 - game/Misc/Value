@@ -1,0 +1,7 @@
+	local Value
+	local CameraDir
+	local start
+	local jumpTick, jumpSpeed, direction = tick(), 0
+	local projectileRemote = {InvokeServer = function() end}
+	task.spawn(function()
+		projectileRemote = bedwars.Handler:Get('ProjectileFire').Remote.instance

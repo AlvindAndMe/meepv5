@@ -1,0 +1,68 @@
+﻿; ==========================================================
+; SwapCopies_And_MoveNonLua.ahk
+; 1. Moves all non-.lua files into Copies/
+; 2. Swaps copies into correct folders based on vape.Categories.*
+; ==========================================================
+
+#SingleInstance Force
+
+CopiesFolder := "Copies"
+
+; ----------------------------------------------------------
+; STEP 1 — Move all non-.lua files into Copies/
+; ----------------------------------------------------------
+
+Loop, Files, *.*, R
+{
+    FilePath := A_LoopFileFullPath
+
+    ; Skip Copies folder itself
+    if InStr(FilePath, CopiesFolder "\")
+        continue
+
+    ; If file does NOT end with .lua → move to Copies
+    if !RegExMatch(FilePath, "\.lua$")
+    {
+        FileCreateDir, %CopiesFolder%
+        SplitPath, FilePath, , , , FileName
+        FileMove, %FilePath%, %CopiesFolder%\%FileName%, 1
+    }
+}
+
+; ----------------------------------------------------------
+; STEP 2 — Swap copies into correct folders
+; ----------------------------------------------------------
+
+Loop, Files, %CopiesFolder%\*.lua
+{
+    CopyFile := A_LoopFileFullPath
+    FileRead, Content, %CopyFile%
+
+    ; Detect category inside the file
+    Category := ""
+    if (RegExMatch(Content, "vape\.Categories\.(\w+):CreateModule", m)) {
+        Category := m1
+    } else {
+        Category := "Misc"
+    }
+
+    ; Build target folder path
+    TargetFolder := Category
+    FileCreateDir, %TargetFolder%
+
+    ; Extract filename
+    SplitPath, CopyFile, , , , FileName
+
+    OriginalFile := TargetFolder "\" FileName
+
+    ; If original exists → swap
+    if (FileExist(OriginalFile)) {
+        FileMove, %OriginalFile%, %CopiesFolder%\%FileName%, 1
+    }
+
+    ; Move copy to correct folder
+    FileMove, %CopyFile%, %OriginalFile%, 1
+}
+
+MsgBox, 64, Done, Non-lua files moved & copies swapped.
+ExitApp

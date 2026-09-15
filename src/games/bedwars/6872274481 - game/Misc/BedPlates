@@ -1,0 +1,51 @@
+	local BedPlates
+	local Background
+	local Color
+	local LayerCounter
+	local LayerColor
+	local Reference = {}
+	local Folder = Instance.new('Folder')
+	Folder.Parent = vape.gui
+	
+	local function getBlockLayerHealth(block)
+		local meta = bedwars.ItemMeta[block]
+		return meta and meta.block and meta.block.health or 0
+	end
+	
+	local function scanSide(self, start, tab)
+		for _, v in sides do
+			local layers = {}
+			for i = 1, 15 do
+				local block = getPlacedBlock(start + (v * i))
+				if not block or block == self or block.Name == 'bed' then
+					break
+				end
+				if not block:GetAttribute('NoBreak') then
+					layers[block.Name] = (layers[block.Name] or 0) + 1
+				end
+			end
+	
+			for i, v in layers do
+				tab[i] = math.max(tab[i] or 0, v)
+			end
+		end
+	end
+	
+	local function refreshAdornee(v)
+		for _, v in v.Frame:GetChildren() do
+			if v:IsA('ImageLabel') and v.Name ~= 'Blur' then
+				v:Destroy()
+			end
+		end
+	
+		local start = v.Adornee.Position
+		local layers = {}
+		local alreadygot = {}
+		scanSide(v.Adornee, start, layers)
+		scanSide(v.Adornee, start + Vector3.new(0, 0, 3), layers)
+		for i, v in layers do
+			table.insert(alreadygot, {i, v})
+		end
+		table.sort(alreadygot, function(a, b)
+			local healthA, healthB = getBlockLayerHealth(a[1]), getBlockLayerHealth(b[1])
+			return healthA == healthB and a[1] < b[1] or healthA > healthB

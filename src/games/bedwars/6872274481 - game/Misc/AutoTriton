@@ -1,0 +1,58 @@
+	local AutoTriton
+	local Legit
+	local Back
+	local BackDelay
+	local Limit
+	local FallSpeed
+	local Search
+	local nextFire = 0
+	
+	local rayCheck = RaycastParams.new()
+	rayCheck.RespectCanCollide = true
+	rayCheck.FilterType = Enum.RaycastFilterType.Include
+	
+	local function getNearGround(origin)
+		for i = 1, Search.Value do
+			for _, v in {Vector3.xAxis, Vector3.zAxis, -Vector3.xAxis, -Vector3.zAxis} do
+				local ray = workspace:Raycast((origin + Vector3.new(0, 3, 0)) + (v * i), Vector3.new(0, -80, 0), rayCheck)
+				if ray then
+					return ray.Position
+				end
+			end
+		end
+		return nil
+	end
+	
+	local function fireHarpoon(item, spot)
+		local meta = bedwars.ProjectileMeta.harpoon_projectile
+		local source = bedwars.ItemMeta[item.itemType].projectileSource
+		local origin = entitylib.character.RootPart.Position
+		local speed, gravity = meta.launchVelocity, meta.gravitationalAcceleration or 196.2
+		local shootPosition = (CFrame.new(origin, spot) * CFrame.new(Vector3.new(-bedwars.BowConstantsTable.RelX, -bedwars.BowConstantsTable.RelY, -bedwars.BowConstantsTable.RelZ))).Position
+		local calc = prediction.SolveTrajectory(shootPosition, speed, gravity, spot, Vector3.zero, workspace.Gravity, 0, nil, nil, false, spot)
+		if not calc then return false end
+	
+		local hotbar, previous = getHotbar(item.tool), store.hand.tool
+		switchItem(item.tool)
+		if Legit.Enabled and hotbar then
+			hotbarSwitch(hotbar)
+		end
+	
+		nextFire = tick() + (source and source.fireDelaySec or 8)
+		bedwars.Handler:Get('ProjectileFire'):Fire('CallServerAsync',
+			item.tool,
+			item.itemType,
+			source and source.projectileType(item.itemType) or 'harpoon_projectile',
+			shootPosition,
+			origin,
+			CFrame.lookAt(shootPosition, calc).LookVector * speed,
+			httpService:GenerateGUID(true),
+			{
+				drawDurationSeconds = 1,
+				shotId = httpService:GenerateGUID(false)
+			},
+			workspace:GetServerTimeNow() - 0.045
+		):andThen(function(res)
+			if res then
+				res.Parent = replicatedStorage
+			end

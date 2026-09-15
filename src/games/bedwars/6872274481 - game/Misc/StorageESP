@@ -1,0 +1,31 @@
+	local StorageESP
+	local List
+	local ShowAmount
+	local Background
+	local Color = {}
+	local Reference = {}
+	local Connections = setmetatable({}, {__mode = 'k'})
+	local Folder = Instance.new('Folder')
+	Folder.Parent = vape.gui
+	
+	local function refreshAdornee(billboard)
+		local chest = billboard.Adornee and billboard.Adornee:FindFirstChild('ChestFolderValue')
+		chest = chest and chest.Value
+		if not chest then
+			billboard.Enabled = false
+			return
+		end
+	
+		for _, v in Connections[billboard] or {} do
+			v:Disconnect()
+		end
+		Connections[billboard] = {}
+		for _, v in billboard.Frame:GetChildren() do
+			if v:IsA('ImageLabel') then
+				v:Destroy()
+			end
+		end
+	
+		local amounts = {}
+		for _, v in chest:GetChildren() do
+			amounts[v.Name] = (amounts[v.Name] or 0) + (v:GetAttribute('Amount') or 0)

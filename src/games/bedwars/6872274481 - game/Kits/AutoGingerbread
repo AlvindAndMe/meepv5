@@ -1,0 +1,27 @@
+	local AutoGingerbread
+	local Range
+	local Delay
+	local Break
+	local Place
+	local PlaceDelay
+	local Jump
+	local Switch
+	local OwnOnly
+	local SuccessfulOnly
+	
+	local old
+	local nextPlace = 0
+	
+	AutoGingerbread = vape.Categories.Kits:CreateModule({
+		Name = 'AutoGingerbreadMan',
+		Function = function(callback)
+			if callback then
+				nextPlace = 0
+				AutoGingerbread:Clean(runService.Heartbeat:Connect(function()
+					if Place.Enabled and entitylib.isAlive and store.equippedKit == 'gingerbread_man' and tick() >= nextPlace and canPlace() and getItem('gumdrop_bounce_pad') then
+						local pos = roundPos(entitylib.character.RootPart.Position - Vector3.new(0, entitylib.character.HipHeight + 1.5, 0))
+						if not getPlacedBlock(pos) then
+							nextPlace = tick() + math.max(PlaceDelay.Value, 1 / bedwars.SharedConstants.BLOCK_PLACE_CPS)
+							bedwars.placeBlock(pos, 'gumdrop_bounce_pad')
+						end
+					end

@@ -1,0 +1,11 @@
+	local oldstart = entitylib.start
+	local function customEntity(ent)
+		if ent:HasTag('inventory-entity') and not ent:HasTag('Monster') and not ent:HasTag('trainingRoomDummy') then
+			return
+		end
+
+		entitylib.addEntity(ent, nil, ent:HasTag('Drone') and function(self)
+			local droneplr = playersService:GetPlayerByUserId(self.Character:GetAttribute('PlayerUserId'))
+			return not droneplr or lplr:GetAttribute('Team') ~= droneplr:GetAttribute('Team')
+		end or function(self)
+			return lplr:GetAttribute('Team') ~= self.Character:GetAttribute('Team')

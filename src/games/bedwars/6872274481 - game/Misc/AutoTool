@@ -1,0 +1,29 @@
+	local AutoTool
+	local Mode
+	local Delay = {}
+	local SwitchBack
+	local old, event
+	local looking, deadline, previous, switching = nil, 0, nil, false
+	
+	local function getToolSlot(block)
+		if not block or block:GetAttribute('NoBreak') or block:GetAttribute('Team'..(lplr:GetAttribute('Team') or 0)..'NoBreak') then return end
+	
+		local meta = bedwars.ItemMeta[block.Name]
+		local tool = meta and meta.block and store.tools[meta.block.breakType]
+		if not tool or (store.hand and store.hand.tool == tool.tool) then return end
+	
+		for i, v in store.inventory.hotbar do
+			if v.item and v.item.itemType == tool.itemType then
+				return i - 1
+			end
+		end
+		return
+	end
+	
+	local function switchTo(slot)
+		if switching then return end
+	
+		switching = true
+		task.spawn(function()
+			hotbarSwitch(slot)
+			switching = false

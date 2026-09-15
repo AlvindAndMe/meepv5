@@ -1,0 +1,14 @@
+	local OwlAura
+	local Targets
+	local Mode
+	local Range
+	
+	OwlAura = vape.Categories.Blatant:CreateModule({
+		Name = 'OwlAura',
+		Function = function(callback)
+			if callback then
+				local owls = collection('Owl', OwlAura, function(tab, obj)
+					task.delay(1, function()
+						if obj and obj.Parent and obj:GetAttribute('Owner') == lplr.UserId then
+							table.insert(tab, obj)
+						end

@@ -1,0 +1,35 @@
+	local NoFall
+	local Damage
+	local disabled = setmetatable({}, {__mode = 'k'})
+	local groundHit = bedwars.Handler:Get('GroundHit')
+	
+	NoFall = vape.Categories.Blatant:CreateModule({
+		Name = 'NoFall',
+		Function = function(callback)
+			if callback then
+				local humanoid = entitylib.isAlive and entitylib.character.Humanoid
+				if humanoid and not disabled[humanoid] and getconnections then
+					disabled[humanoid] = {}
+					for _, v in getconnections(humanoid.StateChanged) do
+						v:Disable()
+						table.insert(disabled[humanoid], v)
+					end
+				end
+	
+				local tracked = 0
+				NoFall:Clean(runService.PostSimulation:Connect(function()
+					if entitylib.isAlive and store.matchState == 1 and not store.infinitefly then
+						local root = entitylib.character.RootPart
+						local velo = root.AssemblyLinearVelocity
+	
+						if tracked < -(45 + (Damage.Value * 0.75)) then
+							root.AssemblyLinearVelocity = Vector3.new(0, 2.5, 0)
+							entitylib.character.Humanoid:ChangeState(Enum.HumanoidStateType.Landed)
+							runService.PreRender:Wait()
+							root.AssemblyLinearVelocity = velo
+							groundHit:Fire('SendToServer', nil, Vector3.new(0, tracked, 0), workspace:GetServerTimeNow())
+						end
+						tracked = velo.Y
+					else
+						tracked = 0
+					end

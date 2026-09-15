@@ -1,0 +1,19 @@
+	local AutoMetal
+	local Limit
+	local StreamerMode
+	local Duration
+	local Range
+	local Animation
+	
+	local Legit = getFunctionRange(bedwars.HiddenMetalController.onKitLocalActivated) or 0
+	local cooldowns = {}
+	
+	AutoMetal = vape.Categories.Kits:CreateModule({
+		Name = 'AutoMetal',
+		Function = function(call)
+			if call then
+				AutoMetal:Clean(proximityPromptService.PromptShown:Connect(function(prompt)
+					if StreamerMode.Enabled and prompt.Name == 'hidden-metal-prompt' and (not Limit.Enabled or store.hand.tool and store.hand.tool.Name == 'metal_detector') then
+						task.wait(0.1)
+						prompt:InputHoldBegin()
+					end

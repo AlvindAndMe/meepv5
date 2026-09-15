@@ -1,0 +1,70 @@
+	local CrateESP
+	local Objects
+	local Distance
+	local Transparency
+	local Scale
+	local Color = {}
+	local Reference = {}
+	local Parts = setmetatable({}, {__mode = 'k'})
+	local Folder
+	
+	local tags = {
+		['CrateAltar'] = 'Crate Altar',
+		['GlitchedLuckyBlock'] = 'Lucky Block',
+		['GrowingHalloweenLuckyBlock'] = 'Lucky Block',
+		['HalloweenLuckyBlock'] = 'Lucky Block',
+		['MagicalHeroLuckyBlock'] = 'Lucky Block',
+		['NewYearsLuckyBlock'] = 'Lucky Block',
+		['RewardCrate'] = 'Reward Crate',
+		['brewing_cauldron'] = 'Cauldron',
+		['cauldron'] = 'Cauldron',
+		['chest'] = 'Chest',
+		['crate'] = 'Crate',
+		['infected-crate'] = 'Crate',
+		['juggernaut-crate'] = 'Juggernaut Crate',
+		['launch-pad'] = 'Launch Pad',
+		['personal-chest'] = 'Personal Chest',
+		['smelter-block'] = 'Smelter',
+		['squad-launcher'] = 'Squad Launcher',
+		['team-crate'] = 'Team Crate'
+	}
+	
+	local function Added(obj, tag)
+		if Reference[obj] or not table.find(Objects.ListEnabled, tags[tag]) then return end
+	
+		local nametag = Instance.new('TextLabel')
+		nametag.Name = tags[tag]
+		nametag.Text = tags[tag]
+		nametag.TextSize = 14 * Scale.Value
+		nametag.FontFace = uipallet.Font
+		local size = getfontbounds(nametag.Text, nametag.TextSize, nametag.FontFace)
+		nametag.Size = UDim2.fromOffset(size.X + 8, size.Y + 7)
+		nametag.AnchorPoint = Vector2.new(0.5, 1)
+		nametag.BackgroundColor3 = Color3.new()
+		nametag.BackgroundTransparency = Transparency.Value
+		nametag.BorderSizePixel = 0
+		nametag.Visible = false
+		nametag.TextColor3 = Color3.fromHSV(Color.Hue, Color.Sat, Color.Value)
+		nametag.Parent = Folder
+		Parts[obj] = obj:IsA('Model') and obj.PrimaryPart or obj:IsA('BasePart') and obj or obj:FindFirstChildWhichIsA('BasePart')
+		Reference[obj] = nametag
+	end
+	
+	CrateESP = vape.Categories.Render:CreateModule({
+		Name = 'CrateESP',
+		Function = function(callback)
+			if callback then
+				if not Folder then
+					if vape.ThreadFix then
+						vape.ThreadFix()
+					end
+					Folder = Instance.new('Folder')
+					Folder.Parent = vape.gui
+				end
+	
+				for i in tags do
+					for _, v in collectionService:GetTagged(i) do
+						Added(v, i)
+					end
+					CrateESP:Clean(collectionService:GetInstanceAddedSignal(i):Connect(function(obj)
+						Added(obj, i)

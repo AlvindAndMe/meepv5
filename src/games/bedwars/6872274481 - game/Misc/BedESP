@@ -1,0 +1,13 @@
+	local BedESP
+	local Reference = setmetatable({}, {__mode = 'k'})
+	local Folder = Instance.new('Folder')
+	Folder.Parent = vape.gui
+	
+	local function Added(bed)
+		if not BedESP.Enabled then return end
+		local BedFolder = Instance.new('Folder')
+		BedFolder.Parent = Folder
+		Reference[bed] = BedFolder
+		local parts = bed:GetChildren()
+		table.sort(parts, function(a, b)
+			return a.Name > b.Name

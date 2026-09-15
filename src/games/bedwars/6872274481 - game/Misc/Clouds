@@ -1,0 +1,27 @@
+	local Clouds
+	local Scale
+	local CloudColor
+	local folder, folderConnection
+	local reference = setmetatable({}, {__mode = 'k'})
+	
+	local function applyAll()
+		if not Clouds.Enabled or not folder then return end
+		for _, v in folder:GetChildren() do
+			if v:IsA('BasePart') then
+				if not reference[v] then
+					reference[v] = {v.Size, v.Color, v.Transparency}
+				end
+				v.Size = reference[v][1] * (Scale.Value / 100)
+				v.Color = Color3.fromHSV(CloudColor.Hue, CloudColor.Sat, CloudColor.Value)
+				v.Transparency = 1 - CloudColor.Opacity
+			end
+		end
+	end
+	
+	local function bindFolder(new)
+		if folderConnection then
+			folderConnection:Disconnect()
+			folderConnection = nil
+		end
+	
+		folder = new

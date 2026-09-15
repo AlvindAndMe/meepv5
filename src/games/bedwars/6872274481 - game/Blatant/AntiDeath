@@ -1,0 +1,50 @@
+	local AntiDeath
+	local StopThreshold
+	local Threshold
+	local Notify
+	local Delay
+	local Mode
+	
+	local oldroot, oldchar, clone, hip
+	local paused, activated = 0, 0
+	
+	local function destroyClone()
+		if not oldroot then return false end
+	
+		local restored = false
+		if oldroot.Parent and oldchar and oldchar.Parent then
+			oldchar.Parent = replicatedStorage
+			oldroot.Parent = oldchar
+			if clone then
+				clone:Destroy()
+			end
+			oldchar.PrimaryPart = oldroot
+			oldchar.Parent = workspace
+			oldroot.CanCollide = true
+			local humanoid = oldchar:FindFirstChildOfClass('Humanoid')
+			if humanoid then
+				humanoid.HipHeight = hip
+			end
+			restored = true
+		elseif clone then
+			clone:Destroy()
+		end
+	
+		oldroot, oldchar, clone = nil, nil, nil
+		store.rootpart = nil
+		return restored
+	end
+	
+	AntiDeath = vape.Categories.Blatant:CreateModule({
+		Name = 'AntiDeath',
+		Function = function(callback)
+			if callback then
+				local floatTime = tick()
+				AntiDeath:Clean(runService.PreSimulation:Connect(function()
+					if not oldroot or not oldroot.Parent or not entitylib.isAlive then return end
+	
+					if (tick() - entitylib.character.AirTime) > 1.7 then
+						floatTime = tick() + 0.2
+					end
+					oldroot.AssemblyLinearVelocity = Vector3.new(0, 1, 0)
+					oldroot.CFrame = clone.CFrame - (tick() > floatTime and Vector3.new(0, 200, 0) or Vector3.zero)
