@@ -12,3 +12,4 @@
 						if obj and obj.Parent and obj:GetAttribute('Owner') == lplr.UserId then
 							table.insert(tab, obj)
 						end
+					end
